@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Engine Air Filter Live AI</title>
+<style>
+body{margin:0;background:#111;color:#fff;font-family:Arial,sans-serif}
+header{padding:12px;text-align:center;font-weight:700;background:#1a1a1a}
+#viewer{position:relative;height:68vh;background:#000;overflow:hidden}
+video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+canvas{pointer-events:none}
+#panel{padding:12px 16px}
+button{width:100%;padding:14px;border:0;border-radius:10px;font-size:17px;font-weight:700}
+#status,#result{text-align:center;margin:8px 0;min-height:22px}
+#result{font-size:22px;font-weight:800}
+</style>
+</head>
+<body>
+<header>Engine Air Filter — Live AI Inspection</header>
+<div id="viewer">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
+</div>
+<div id="panel">
+  <div id="status">Loading AI model…</div>
+  <button id="startBtn" disabled>Start Camera</button>
+  <div id="result"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
