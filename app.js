@@ -1,4 +1,4 @@
-const MODEL_URL="./best.onnx?v=5";
+const MODEL_URL="./detector_v4.onnx?v=1";
 const IOU=0.45, FPS=2;
 const CLASSES=["CLEAN","DIRTY"];
 let CONF=0.70;
@@ -52,7 +52,7 @@ function decode(o,ow,oh,scale,px,py){
  const d=o.data,s=o.dims;let count,major,channels;
  if(s.length===3){if(s[1]<=20){channels=s[1];count=s[2];major=true;}else if(s[2]<=20){channels=s[2];count=s[1];major=false;}}
  if(!channels)throw new Error("Unexpected model output shape: "+JSON.stringify(s));
- if(channels!==6)throw new Error(`Loaded model output is ${JSON.stringify(s)}. V3 detector must output [1,6,8400].`);
+ if(channels!==6)throw new Error(`Loaded model output is ${JSON.stringify(s)}. Detector must output [1,6,8400].`);
  const get=(ch,i)=>major?d[ch*count+i]:d[i*channels+ch],a=[];
  for(let i=0;i<count;i++){const cx=get(0,i),cy=get(1,i),w=get(2,i),h=get(3,i),c0=get(4,i),c1=get(5,i),cls=c1>c0?1:0,conf=Math.max(c0,c1);if(conf<CONF)continue;let x1=(cx-w/2-px)/scale,y1=(cy-h/2-py)/scale,x2=(cx+w/2-px)/scale,y2=(cy+h/2-py)/scale;x1=Math.max(0,Math.min(ow,x1));y1=Math.max(0,Math.min(oh,y1));x2=Math.max(0,Math.min(ow,x2));y2=Math.max(0,Math.min(oh,y2));if(x2>x1&&y2>y1)a.push({x1,y1,x2,y2,cls,conf,label:CLASSES[cls]});}return a;
 }
