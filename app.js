@@ -3,9 +3,8 @@ import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers
 const MODEL_PATH = "./best.onnx";
 const IMAGE_SIZE = 224;
 
-// IMPORTANT: The exported ONNX model output order is opposite to the
-// original browser mapping. Index 0 = GOOD, index 1 = BAD for this model.
-const CLASS_NAMES = ["GOOD", "BAD"];
+// Folder/class order used during training: BAD=0, GOOD=1
+const CLASS_NAMES = ["BAD", "GOOD"];
 
 const AIR_FILTER_LABEL = "a photo of a car engine air filter";
 const GATE_LABELS = [
@@ -125,6 +124,8 @@ function imageToTensor(img) {
   const srcW = img.naturalWidth || img.width;
   const srcH = img.naturalHeight || img.height;
 
+  // Match Ultralytics classification inference:
+  // resize shortest edge to 224, preserve aspect ratio, then center-crop 224x224.
   const scale = IMAGE_SIZE / Math.min(srcW, srcH);
   const resizedW = Math.round(srcW * scale);
   const resizedH = Math.round(srcH * scale);
@@ -133,6 +134,8 @@ function imageToTensor(img) {
   temp.width = resizedW;
   temp.height = resizedH;
   const tempCtx = temp.getContext("2d", { willReadFrequently: true });
+  tempCtx.imageSmoothingEnabled = true;
+  tempCtx.imageSmoothingQuality = "high";
   tempCtx.drawImage(img, 0, 0, resizedW, resizedH);
 
   const sx = Math.floor((resizedW - IMAGE_SIZE) / 2);
@@ -146,19 +149,15 @@ function imageToTensor(img) {
 
   const pixels = cropCtx.getImageData(0, 0, IMAGE_SIZE, IMAGE_SIZE).data;
   const floatData = new Float32Array(3 * IMAGE_SIZE * IMAGE_SIZE);
-  const mean = [0.485, 0.456, 0.406];
-  const std = [0.229, 0.224, 0.225];
   const plane = IMAGE_SIZE * IMAGE_SIZE;
 
+  // YOLO26 classification uses RGB values scaled to 0..1.
+  // Do NOT apply ImageNet mean/std normalization here.
   for (let i = 0; i < plane; i++) {
     const px = i * 4;
-    const r = pixels[px] / 255;
-    const g = pixels[px + 1] / 255;
-    const b = pixels[px + 2] / 255;
-
-    floatData[i] = (r - mean[0]) / std[0];
-    floatData[plane + i] = (g - mean[1]) / std[1];
-    floatData[2 * plane + i] = (b - mean[2]) / std[2];
+    floatData[i] = pixels[px] / 255;
+    floatData[plane + i] = pixels[px + 1] / 255;
+    floatData[2 * plane + i] = pixels[px + 2] / 255;
   }
 
   return new ort.Tensor("float32", floatData, [1, 3, IMAGE_SIZE, IMAGE_SIZE]);
