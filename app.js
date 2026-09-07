@@ -1,5 +1,5 @@
 const MODEL_URL="./best.onnx";
-const INPUT=640, CONF=0.35, IOU=0.45, FPS=3;
+const INPUT=640, CONF=0.05, IOU=0.45, FPS=2;
 const CLASSES=["CLEAN","DIRTY"];
 
 const video=document.getElementById("video");
