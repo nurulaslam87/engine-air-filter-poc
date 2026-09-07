@@ -24,7 +24,7 @@ ort.env.wasm.wasmPaths="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
   }catch(e){
     console.error(e);
     statusEl.textContent="Model failed to load";
-    resultEl.textContent=String(e);
+    resultEl.textContent=(e&&e.message)?e.message:String(e);
   }
 })();
 
@@ -40,10 +40,11 @@ startBtn.onclick=async()=>{
     running=true;
     startBtn.textContent="Stop Camera";
     statusEl.textContent="Scanning…";
+    resultEl.textContent="Waiting for first inference…";
     requestAnimationFrame(loop);
   }catch(e){
     statusEl.textContent="Camera permission failed";
-    resultEl.textContent=e.message||String(e);
+    resultEl.textContent=(e&&e.message)?e.message:String(e);
   }
 };
 
@@ -61,8 +62,19 @@ async function loop(t){
   if(!running)return;
   if(t-lastRun>=1000/FPS && video.readyState>=2){
     lastRun=t;
-    try{draw(await detect());}
-    catch(e){console.error(e);statusEl.textContent="Detection error";}
+    try{
+      const detections=await detect();
+      statusEl.textContent="Scanning…";
+      draw(detections);
+    }catch(e){
+      console.error(e);
+      statusEl.textContent="Detection error";
+      resultEl.textContent=(e&&e.message)?e.message:String(e);
+      running=false;
+      startBtn.textContent="Start Camera";
+      if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+      return;
+    }
   }
   requestAnimationFrame(loop);
 }
@@ -93,8 +105,12 @@ async function detect(){
   }
 
   const tensor=new ort.Tensor("float32",f,[1,3,INPUT,INPUT]);
-  const out=await session.run({[session.inputNames[0]]:tensor});
-  return nms(decode(out[session.outputNames[0]],vw,vh,scale,px,py));
+  const feeds={};
+  feeds[session.inputNames[0]]=tensor;
+  const out=await session.run(feeds);
+  const output=out[session.outputNames[0]];
+  if(!output) throw new Error("Model returned no output tensor");
+  return nms(decode(output,vw,vh,scale,px,py));
 }
 
 function decode(o,ow,oh,scale,px,py){
@@ -102,7 +118,7 @@ function decode(o,ow,oh,scale,px,py){
   let count,major;
   if(s.length===3&&s[1]===6){count=s[2];major=true;}
   else if(s.length===3&&s[2]===6){count=s[1];major=false;}
-  else throw new Error("Unexpected model output "+JSON.stringify(s));
+  else throw new Error("Unexpected model output shape: "+JSON.stringify(s));
 
   const get=(ch,i)=>major?d[ch*count+i]:d[i*6+ch];
   const a=[];
@@ -115,8 +131,8 @@ function decode(o,ow,oh,scale,px,py){
 
     let x1=(cx-w/2-px)/scale,y1=(cy-h/2-py)/scale;
     let x2=(cx+w/2-px)/scale,y2=(cy+h/2-py)/scale;
-    x1=Math.max(0,Math.min(ow,x1)); y1=Math.max(0,Math.min(oh,y1));
-    x2=Math.max(0,Math.min(ow,x2)); y2=Math.max(0,Math.min(oh,y2));
+    x1=Math.max(0,Math.min(ow,x1));y1=Math.max(0,Math.min(oh,y1));
+    x2=Math.max(0,Math.min(ow,x2));y2=Math.max(0,Math.min(oh,y2));
     if(x2>x1&&y2>y1)a.push({x1,y1,x2,y2,cls,conf,label:CLASSES[cls]});
   }
   return a;
@@ -128,7 +144,7 @@ function nms(a){
     const q=a.filter(z=>z.cls===cls).sort((p,q)=>q.conf-p.conf);
     while(q.length){
       const b=q.shift();keep.push(b);
-      for(let i=q.length-1;i>=0;i--) if(iou(b,q[i])>IOU) q.splice(i,1);
+      for(let i=q.length-1;i>=0;i--)if(iou(b,q[i])>IOU)q.splice(i,1);
     }
   }
   return keep.sort((p,q)=>q.conf-p.conf).slice(0,10);
