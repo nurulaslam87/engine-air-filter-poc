@@ -2,7 +2,10 @@ import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers
 
 const MODEL_PATH = "./best.onnx";
 const IMAGE_SIZE = 224;
-const CLASS_NAMES = ["BAD", "GOOD"];
+
+// IMPORTANT: The exported ONNX model output order is opposite to the
+// original browser mapping. Index 0 = GOOD, index 1 = BAD for this model.
+const CLASS_NAMES = ["GOOD", "BAD"];
 
 const AIR_FILTER_LABEL = "a photo of a car engine air filter";
 const GATE_LABELS = [
