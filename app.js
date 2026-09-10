@@ -1,4 +1,4 @@
-const MODEL_URL="./detector_v4.onnx?v=1";
+const MODEL_URL="./detector_v5.onnx?v=1";
 const IOU=0.45, FPS=2;
 const CLASSES=["CLEAN","DIRTY"];
 let CONF=0.70;
