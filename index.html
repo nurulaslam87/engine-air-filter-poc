@@ -7,9 +7,7 @@
 <title>AutoVision AI</title>
 
 <style>
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 body{
   margin:0;
@@ -19,41 +17,40 @@ body{
 }
 
 header{
-  padding:16px 12px;
+  height:90px;
+  padding:12px;
   text-align:center;
   background:#161b22;
   border-bottom:1px solid #30363d;
 }
 
 .brand{
-  font-size:25px;
+  font-size:24px;
   font-weight:800;
 }
 
 .subtitle{
-  margin-top:4px;
-  font-size:14px;
+  margin-top:3px;
+  font-size:13px;
   color:#b7c0cc;
 }
 
 .tagline{
-  margin-top:6px;
-  font-size:13px;
+  margin-top:4px;
+  font-size:12px;
   color:#8b949e;
 }
 
-/* CAMERA */
+/* CAMERA — APPROX HALF OF PHONE SCREEN */
 
 #viewer{
   position:relative;
-  height:58vh;
-  min-height:350px;
+  height:50vh;
   background:#000;
   overflow:hidden;
 }
 
-video,
-canvas{
+video,canvas{
   position:absolute;
   inset:0;
   width:100%;
@@ -61,31 +58,25 @@ canvas{
   object-fit:cover;
 }
 
-canvas{
-  pointer-events:none;
-}
-
-/* SCANNING BADGE */
+canvas{pointer-events:none}
 
 #scanBadge{
   position:absolute;
-  top:12px;
+  top:10px;
   left:50%;
   transform:translateX(-50%);
   z-index:5;
-
-  background:rgba(0,0,0,.70);
-  padding:7px 13px;
-  border-radius:20px;
-
-  font-size:13px;
+  background:rgba(0,0,0,.7);
+  padding:6px 12px;
+  border-radius:18px;
+  font-size:12px;
   font-weight:700;
 }
 
-/* MAIN PANEL */
+/* CONTROL AREA */
 
 #panel{
-  padding:14px;
+  padding:10px 12px 6px;
   max-width:700px;
   margin:auto;
 }
@@ -93,114 +84,105 @@ canvas{
 #status{
   text-align:center;
   color:#9da7b3;
-  font-size:13px;
-  min-height:18px;
-  margin-bottom:10px;
+  font-size:12px;
+  min-height:16px;
+  margin-bottom:7px;
 }
 
-/* RESULT CARD */
+/* RESULT */
 
 #resultCard{
   background:#161b22;
   border:1px solid #30363d;
-  border-radius:12px;
-  padding:14px;
-  margin-bottom:12px;
-}
-
-.resultTitle{
-  font-size:12px;
-  color:#8b949e;
-  text-transform:uppercase;
-  letter-spacing:1px;
+  border-radius:10px;
+  padding:10px 12px;
   margin-bottom:8px;
 }
 
+.resultTitle{
+  font-size:10px;
+  color:#8b949e;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:5px;
+}
+
 #result{
-  font-size:21px;
+  font-size:18px;
   font-weight:800;
-  min-height:28px;
+  min-height:22px;
 }
 
 /* BUTTON */
 
 button{
   width:100%;
-  padding:15px;
+  padding:12px;
   border:0;
-  border-radius:10px;
-
+  border-radius:9px;
   background:#238636;
-  color:white;
-
-  font-size:17px;
+  color:#fff;
+  font-size:16px;
   font-weight:800;
-
-  cursor:pointer;
 }
 
 button:disabled{
   background:#30363d;
   color:#8b949e;
-  cursor:not-allowed;
 }
 
-/* SUPPORTED COMPONENTS */
+/* COMPACT SUPPORTED INSPECTIONS */
 
 #supported{
-  margin-top:14px;
-  background:#161b22;
-  border:1px solid #30363d;
-  border-radius:12px;
-  padding:13px;
+  margin-top:8px;
+  text-align:center;
 }
 
 .supportedTitle{
   color:#8b949e;
-  font-size:12px;
+  font-size:10px;
   text-transform:uppercase;
   letter-spacing:1px;
-  margin-bottom:10px;
+  margin-bottom:6px;
+}
+
+.componentRow{
+  display:flex;
+  gap:6px;
+  justify-content:center;
 }
 
 .component{
-  padding:8px 0;
-  border-bottom:1px solid #21262d;
-}
-
-.component:last-child{
-  border-bottom:none;
-}
-
-.componentName{
+  flex:1;
+  background:#161b22;
+  border:1px solid #30363d;
+  border-radius:8px;
+  padding:7px 3px;
+  font-size:11px;
   font-weight:700;
 }
 
-.componentCapability{
-  font-size:12px;
-  color:#8b949e;
+.component small{
+  display:block;
   margin-top:2px;
+  color:#8b949e;
+  font-size:9px;
+  font-weight:400;
 }
-
-/* FOOTER */
 
 footer{
   text-align:center;
-  padding:12px 20px 20px;
+  padding:5px 10px 8px;
   color:#6e7681;
-  font-size:11px;
+  font-size:9px;
 }
 </style>
 </head>
 
-
 <body>
 
 <header>
-
-  <div class="brand">
-    AutoVision AI
-  </div>
+  <div class="brand">AutoVision AI</div>
 
   <div class="subtitle">
     AI-Assisted Vehicle Inspection System
@@ -209,18 +191,12 @@ footer{
   <div class="tagline">
     See it. Diagnose it. Learn it.
   </div>
-
 </header>
 
 
 <div id="viewer">
 
-  <video
-    id="video"
-    autoplay
-    playsinline
-    muted>
-  </video>
+  <video id="video" autoplay playsinline muted></video>
 
   <canvas id="overlay"></canvas>
 
@@ -251,9 +227,7 @@ footer{
   </div>
 
 
-  <button
-    id="startBtn"
-    disabled>
+  <button id="startBtn" disabled>
     Start Inspection
   </button>
 
@@ -264,41 +238,21 @@ footer{
       Supported Inspections
     </div>
 
+    <div class="componentRow">
 
-    <div class="component">
-
-      <div class="componentName">
-        Engine Air Filter
+      <div class="component">
+        Air Filter
+        <small>Clean / Dirty</small>
       </div>
 
-      <div class="componentCapability">
-        Identification + CLEAN / DIRTY assessment
-      </div>
-
-    </div>
-
-
-    <div class="component">
-
-      <div class="componentName">
+      <div class="component">
         Brake Pad
+        <small>Identification</small>
       </div>
 
-      <div class="componentCapability">
-        Component identification
-      </div>
-
-    </div>
-
-
-    <div class="component">
-
-      <div class="componentName">
+      <div class="component">
         Spark Plug
-      </div>
-
-      <div class="componentCapability">
-        Component identification
+        <small>Identification</small>
       </div>
 
     </div>
@@ -309,12 +263,11 @@ footer{
 
 
 <footer>
-  AI-assisted inspection • Technician makes the final inspection decision
+  AI-assisted inspection • Technician makes the final decision
 </footer>
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-
 <script src="./app.js?v=62"></script>
 
 </body>
