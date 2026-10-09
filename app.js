@@ -29,7 +29,35 @@ let stableCount=0;
 const REQUIRED_STABLE_FRAMES=3;
 let stableFinding=null;
 let capturedFinding=null;
-const inspectionRecords=[];
+const STORAGE_KEY="autovision_v64_inspection_records";
+let storageAvailable=true;
+let inspectionRecords=[];
+function readSavedRecords(){
+ try{
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw)return [];
+  const parsed=JSON.parse(raw);
+  if(!Array.isArray(parsed))throw new Error("Invalid stored records");
+  return parsed.filter(r=>r && typeof r==="object" &&
+   typeof r.component==="string" && typeof r.technicianAssessment==="string");
+ }catch(error){
+  console.warn("AutoVision storage unavailable or invalid",error);
+  storageAvailable=false;
+  return [];
+ }
+}
+function persistRecords(next){
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+  storageAvailable=true;
+  return true;
+ }catch(error){
+  console.error("Cannot save inspection records",error);
+  alert("Could not save records on this device. Check browser storage settings or available space. Your current records have not been changed.");
+  return false;
+ }
+}
+inspectionRecords=readSavedRecords();
 const captureBtn=document.getElementById("captureBtn");
 const inspectionPanel=document.getElementById("inspectionPanel");
 const inspectionSummary=document.getElementById("inspectionSummary");
@@ -965,19 +993,25 @@ document.getElementById("saveFindingBtn").onclick=()=>{
  if(decision==="override" && isAir && assessment===capturedFinding.aiSuggestion){
   alert("Choose a different assessment for an override.");return;
  }
- inspectionRecords.push({
+ const next=[...inspectionRecords,{
   ...capturedFinding,
   decision,
   technicianAssessment:assessment,
   remarks:remarksEl.value.trim(),
   savedAt:new Date().toISOString()
- });
+ }];
+ if(!persistRecords(next))return;
+ inspectionRecords=next;
  capturedFinding=null;inspectionPanel.hidden=true;
  renderRecords();
 };
 function renderRecords(){
  recordList.replaceChildren();
  recordCount.textContent=String(inspectionRecords.length);
+ const storageStatus=document.getElementById("storageStatus");
+ storageStatus.textContent=storageAvailable?
+  "Saved on this device only. Records remain after refresh but may be lost if browser data is cleared.":
+  "Browser storage is unavailable. Do not rely on records being retained.";
  for(const r of inspectionRecords){
   const li=document.createElement("li");
   li.textContent=r.component+" | AI: "+r.aiSuggestion+
@@ -989,7 +1023,8 @@ function renderRecords(){
 }
 document.getElementById("clearRecordsBtn").onclick=()=>{
  if(inspectionRecords.length && confirm("Clear all records from this inspection?")){
-  inspectionRecords.length=0;renderRecords();
+  if(!persistRecords([]))return;
+  inspectionRecords=[];renderRecords();
  }
 };
 renderRecords();
