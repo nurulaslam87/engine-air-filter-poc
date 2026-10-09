@@ -1058,20 +1058,68 @@ renderRecords();
 
 const vehicleSelect=document.getElementById("vehicleSelect");
 const vehicleForm=document.getElementById("vehicleForm");
+const activeVehicleCard=document.getElementById("activeVehicleCard");
+const historyPanel=document.getElementById("historyPanel");
+const historyList=document.getElementById("historyList");
+const historyBtn=document.getElementById("historyBtn");
+function countFindings(sessionId){
+ return inspectionRecords.filter(r=>r.sessionId===sessionId).length;
+}
+function chooseVehicle(nextId){
+ if(capturedFinding){alert("Finish or cancel the current review first.");return false;}
+ if(!sessions.some(v=>v.id===nextId))return false;
+ if(!storeSessions(sessions,inspectionRecords,nextId))return false;
+ activeId=nextId;
+ renderVehicles();
+ return true;
+}
+historyBtn.onclick=()=>{
+ historyPanel.hidden=!historyPanel.hidden;
+ historyBtn.setAttribute("aria-expanded",String(!historyPanel.hidden));
+ historyBtn.textContent=historyPanel.hidden?"View Previous Inspections":"Hide Inspection History";
+};
 function renderVehicles(){
  vehicleSelect.replaceChildren();
+ historyList.replaceChildren();
  if(!sessions.length){
   const o=document.createElement("option");o.value="";o.textContent="No inspections yet";vehicleSelect.appendChild(o);
  }
  for(const v of sessions){
   const o=document.createElement("option");o.value=v.id;
-  o.textContent=v.registration+" — "+v.makeModel;vehicleSelect.appendChild(o);
+  o.textContent=v.registration+" — "+v.makeModel+" ("+countFindings(v.id)+" findings)";
+  vehicleSelect.appendChild(o);
  }
  vehicleSelect.value=activeId||"";
  const v=activeSession();
+ activeVehicleCard.replaceChildren();
+ if(v){
+  const status=document.createElement("div");status.className="status";status.textContent="● ACTIVE INSPECTION";
+  const reg=document.createElement("strong");reg.textContent=v.registration;
+  const detail=document.createElement("div");detail.className="muted";
+  detail.textContent=v.makeModel+" · "+(v.mileage||"Mileage not entered")+" km · "+countFindings(v.id)+" saved finding(s)";
+  activeVehicleCard.append(status,reg,detail);
+ }else{
+  activeVehicleCard.textContent="No active vehicle. Tap New Vehicle Inspection to begin.";
+ }
+ const previous=sessions.filter(x=>x.id!==activeId).slice().reverse();
+ if(!previous.length){
+  const p=document.createElement("div");p.className="vehicleDetails";
+  p.textContent="No other inspections saved yet.";
+  historyList.appendChild(p);
+ }
+ for(const old of previous){
+  const btn=document.createElement("button");
+  btn.type="button";btn.className="historyEntry";
+  const title=document.createElement("span");title.textContent=old.registration+" — "+old.makeModel;
+  const details=document.createElement("span");details.className="muted";
+  details.textContent=countFindings(old.id)+" finding(s) · "+new Date(old.createdAt).toLocaleDateString()+" · Tap to open";
+  btn.append(title,details);
+  btn.onclick=()=>{if(chooseVehicle(old.id)){historyPanel.hidden=true;historyBtn.textContent="View Previous Inspections";historyBtn.setAttribute("aria-expanded","false");}};
+  historyList.appendChild(btn);
+ }
  document.getElementById("vehicleInfo").textContent=v?
-  "Registration: "+v.registration+" | "+v.makeModel+" | "+(v.mileage||"Not recorded")+" km | Technician: "+(v.technician||"Not recorded")+" | Date: "+new Date(v.createdAt).toLocaleString()+" | ID: "+v.id:
-  "Create a vehicle inspection before saving findings.";
+  "Technician: "+(v.technician||"Not recorded")+" | Date: "+new Date(v.createdAt).toLocaleString()+" | Inspection ID: "+v.id:
+  "Vehicle records are stored on this device.";
  captureBtn.disabled=!v||!stableFinding;
  renderRecords();
 }
@@ -1091,10 +1139,7 @@ vehicleForm.onsubmit=e=>{
  sessions=next;activeId=v.id;vehicleForm.reset();vehicleForm.hidden=true;renderVehicles();
 };
 vehicleSelect.onchange=()=>{
- if(capturedFinding){alert("Finish or cancel the current review first.");vehicleSelect.value=activeId||"";return;}
  const nextId=vehicleSelect.value;
- if(!sessions.some(s=>s.id===nextId))return;
- if(!storeSessions(sessions,inspectionRecords,nextId)){vehicleSelect.value=activeId||"";return;}
- activeId=nextId;renderVehicles();
+ if(!chooseVehicle(nextId))vehicleSelect.value=activeId||"";
 };
 renderVehicles();
