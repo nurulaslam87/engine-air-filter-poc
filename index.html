@@ -282,6 +282,16 @@ header{height:auto;min-height:78px}
 #arQuickEntry select,#arQuickEntry input:not([type=checkbox]),#arQuickEntry textarea{display:block;width:100%;background:#0d1117;color:white;border:1px solid #465161;padding:10px;border-radius:8px}
 #arQuickStatus{color:#86efac;font-size:13px;margin:9px 0}
 @media(max-width:380px){#arQuickEntry .manualConditions{grid-template-columns:1fr}}
+#arPointer{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;z-index:3;user-select:none}
+#arPointer[hidden]{display:none!important}
+.arPointerRing{display:block;width:76px;height:76px;border:3px solid #43f5a1;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.6),0 0 15px rgba(67,245,161,.5);position:relative}
+.arPointerRing:before,.arPointerRing:after{content:"";position:absolute;background:#43f5a1;left:50%;top:50%;transform:translate(-50%,-50%)}
+.arPointerRing:before{width:2px;height:22px}.arPointerRing:after{width:22px;height:2px}
+#arPointerLabel{background:rgba(0,0,0,.83);color:#b5ffdb;padding:5px 9px;border-radius:7px;font-size:12px;font-weight:700;white-space:nowrap}
+#arCameraFrame{touch-action:pan-y}
+.arPointerToggle{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px;color:#cbd5e1}
+.arPointerToggle input{accent-color:#34d399;width:19px;height:19px}
+#arPointerReset{margin:4px 0 10px}
 </style>
 </head>
 
@@ -395,9 +405,13 @@ header{height:auto;min-height:78px}
  <select id="arTask"></select>
  <div id="arCameraFrame">
   <video id="arVideo" playsinline autoplay muted></video>
+  <div id="arPointer" role="img" aria-label="Movable inspection marker"><span class="arPointerRing"></span><span id="arPointerLabel">Inspect here</span></div>
   <div id="arOverlay"><div id="arStepCount"></div><div id="arStepText"></div></div>
  </div>
  <div id="arCameraStatus" role="status" aria-live="polite">Camera off</div>
+ <label class="arPointerToggle"><input id="arPointerEnabled" type="checkbox" checked> Show inspection pointer</label>
+ <p class="manualHint">Tap or drag within the camera image to move the pointer. It is a manual visual guide, not automatic detection.</p>
+ <button id="arPointerReset" type="button" class="secondaryAction">Reset Pointer Position</button>
  <button id="arCameraBtn" type="button">Start AR Camera</button>
  <div class="arActions">
   <button id="arPrevious" type="button" class="secondaryAction">Previous</button>
@@ -502,7 +516,7 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=71"></script>
+<script src="./app.js?v=72"></script>
 
 <script>
 /* Independent navigation fallback: tabs remain usable if AI startup fails. */
