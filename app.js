@@ -197,7 +197,7 @@ startBtn.onclick=async()=>{
  }catch(e){
 
   statusEl.textContent=
-   "Camera permission failed";
+   "Unable to start camera — check browser permissions and whether another camera is active";
 
   resultEl.textContent=
    e?.message||String(e);
@@ -1306,6 +1306,7 @@ function showMode(mode){
  aiPage.hidden=mode!=="ai";
  document.getElementById("arGuidePanel").hidden=mode!=="ar";
  if(mode!=="ar")stopArCamera();
+ if(mode!=="ai" && running)stopCamera();
  document.getElementById("recordsPanel").hidden=mode!=="results";
  for(const b of tabs.querySelectorAll("button")){
   const active=b.dataset.mode===mode;
@@ -1314,8 +1315,6 @@ function showMode(mode){
  }
 }
 for(const b of tabs.querySelectorAll("button"))b.onclick=()=>showMode(b.dataset.mode);
-showMode("manual");
-
 /* V7.0 guided servicing: informational 2D camera overlay, not spatial AR. */
 const AR_GUIDES={
  "Engine Oil Level":["Park on level ground, secure the vehicle, and follow the manufacturer procedure for engine temperature and waiting time.","Locate the dipstick using the vehicle manual. Keep clear of hot or moving parts.","Remove and wipe the dipstick, reinsert fully, then remove and read the level against MIN and MAX marks.","Record the observed level. Do not assume a reading from the camera image."],
@@ -1366,7 +1365,7 @@ document.getElementById("arCameraBtn").onclick=async()=>{
   document.getElementById("arCameraStatus").textContent="Live camera — instructions are informational overlays";
  }catch(e){
   stopArCamera();
-  document.getElementById("arCameraStatus").textContent="Camera unavailable: "+(e.message||"Permission denied");
+  document.getElementById("arCameraStatus").textContent="Camera unavailable: "+(e.message||"Permission denied")+" — check browser camera permission and close other camera apps.";
  }
 };
 document.getElementById("arRecord").onclick=()=>{
@@ -1377,3 +1376,4 @@ document.getElementById("arRecord").onclick=()=>{
  document.getElementById("manualPanel").scrollIntoView({behavior:"smooth",block:"start"});
 };
 updateArGuide();
+showMode("manual");
