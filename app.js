@@ -30,6 +30,17 @@ const REQUIRED_STABLE_FRAMES=3;
 let stableFinding=null;
 let capturedFinding=null;
 const STORAGE_KEY="autovision_v64_inspection_records";
+const SESSION_KEY="autovision_v65_sessions";
+let sessions=[];
+let activeId=null;
+function id(){return (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));}
+function activeSession(){return sessions.find(s=>s.id===activeId);}
+function storeSessions(nextSessions,nextRecords,nextId){
+ try{
+  localStorage.setItem(SESSION_KEY,JSON.stringify({sessions:nextSessions,records:nextRecords,activeId:nextId}));
+  return true;
+ }catch(e){alert("Could not save inspection. Browser storage may be full or unavailable.");return false;}
+}
 let storageAvailable=true;
 let inspectionRecords=[];
 function readSavedRecords(){
@@ -58,6 +69,19 @@ function persistRecords(next){
  }
 }
 inspectionRecords=readSavedRecords();
+try{
+ const saved=localStorage.getItem(SESSION_KEY);
+ if(saved){
+  const state=JSON.parse(saved);
+  if(!Array.isArray(state.sessions)||!Array.isArray(state.records))throw Error("Invalid session data");
+  sessions=state.sessions;inspectionRecords=state.records;
+  activeId=sessions.some(x=>x.id===state.activeId)?state.activeId:(sessions[0]?.id||null);
+ }else if(inspectionRecords.length){
+  const old={id:id(),registration:"LEGACY",makeModel:"Previous V6.4 findings",mileage:"",technician:"",createdAt:new Date().toISOString()};
+  const migrated=inspectionRecords.map(r=>({...r,sessionId:old.id}));
+  if(storeSessions([old],migrated,old.id)){sessions=[old];inspectionRecords=migrated;activeId=old.id;}
+ }
+}catch(e){console.error("Cannot load vehicle sessions",e);alert("Saved sessions could not be loaded. Previous V6.4 records remain in browser storage.");}
 const captureBtn=document.getElementById("captureBtn");
 const inspectionPanel=document.getElementById("inspectionPanel");
 const inspectionSummary=document.getElementById("inspectionSummary");
@@ -817,7 +841,7 @@ function drawStable(a){
   aiSuggestion:(z.label==="AIR_FILTER_CLEAN"||z.label==="AIR_FILTER_DIRTY")?info.condition:"Identification only",
   confidence:z.conf
  };
- captureBtn.disabled=false;
+ captureBtn.disabled=!activeSession();
 
 
  // ------------------------------------------------
@@ -955,7 +979,7 @@ function setAssessmentOptions(finding){
  else assessmentEl.value="Unable to determine";
 }
 captureBtn.onclick=()=>{
- if(!stableFinding)return;
+ if(!stableFinding||!activeSession()){alert("Create or select a vehicle inspection first.");return;}
  capturedFinding={...stableFinding, capturedAt:new Date().toISOString()};
  inspectionSummary.textContent=
   capturedFinding.component+" — AI: "+capturedFinding.aiSuggestion+
@@ -994,25 +1018,27 @@ document.getElementById("saveFindingBtn").onclick=()=>{
   alert("Choose a different assessment for an override.");return;
  }
  const next=[...inspectionRecords,{
+  sessionId:activeId,
   ...capturedFinding,
   decision,
   technicianAssessment:assessment,
   remarks:remarksEl.value.trim(),
   savedAt:new Date().toISOString()
  }];
- if(!persistRecords(next))return;
+ if(!storeSessions(sessions,next,activeId))return;
  inspectionRecords=next;
  capturedFinding=null;inspectionPanel.hidden=true;
  renderRecords();
 };
 function renderRecords(){
  recordList.replaceChildren();
- recordCount.textContent=String(inspectionRecords.length);
+ const selectedRecords=inspectionRecords.filter(r=>r.sessionId===activeId);
+ recordCount.textContent=String(selectedRecords.length);
  const storageStatus=document.getElementById("storageStatus");
  storageStatus.textContent=storageAvailable?
   "Saved on this device only. Records remain after refresh but may be lost if browser data is cleared.":
   "Browser storage is unavailable. Do not rely on records being retained.";
- for(const r of inspectionRecords){
+ for(const r of selectedRecords){
   const li=document.createElement("li");
   li.textContent=r.component+" | AI: "+r.aiSuggestion+
    " | Technician: "+r.technicianAssessment+
@@ -1022,9 +1048,53 @@ function renderRecords(){
  }
 }
 document.getElementById("clearRecordsBtn").onclick=()=>{
- if(inspectionRecords.length && confirm("Clear all records from this inspection?")){
-  if(!persistRecords([]))return;
-  inspectionRecords=[];renderRecords();
+ if(activeSession() && inspectionRecords.some(r=>r.sessionId===activeId) && confirm("Clear findings for this vehicle only?")){
+  const next=inspectionRecords.filter(r=>r.sessionId!==activeId);
+  if(!storeSessions(sessions,next,activeId))return;
+  inspectionRecords=next;renderRecords();
  }
 };
 renderRecords();
+
+const vehicleSelect=document.getElementById("vehicleSelect");
+const vehicleForm=document.getElementById("vehicleForm");
+function renderVehicles(){
+ vehicleSelect.replaceChildren();
+ if(!sessions.length){
+  const o=document.createElement("option");o.value="";o.textContent="No inspections yet";vehicleSelect.appendChild(o);
+ }
+ for(const v of sessions){
+  const o=document.createElement("option");o.value=v.id;
+  o.textContent=v.registration+" — "+v.makeModel;vehicleSelect.appendChild(o);
+ }
+ vehicleSelect.value=activeId||"";
+ const v=activeSession();
+ document.getElementById("vehicleInfo").textContent=v?
+  "Registration: "+v.registration+" | "+v.makeModel+" | "+(v.mileage||"Not recorded")+" km | Technician: "+(v.technician||"Not recorded")+" | Date: "+new Date(v.createdAt).toLocaleString()+" | ID: "+v.id:
+  "Create a vehicle inspection before saving findings.";
+ captureBtn.disabled=!v||!stableFinding;
+ renderRecords();
+}
+document.getElementById("newVehicleBtn").onclick=()=>{vehicleForm.hidden=!vehicleForm.hidden;};
+document.getElementById("cancelVehicleBtn").onclick=()=>{vehicleForm.reset();vehicleForm.hidden=true;};
+vehicleForm.onsubmit=e=>{
+ e.preventDefault();
+ if(capturedFinding){alert("Finish or cancel the current review first.");return;}
+ const registration=document.getElementById("vehicleReg").value.trim().toUpperCase();
+ const makeModel=document.getElementById("vehicleModel").value.trim();
+ const mileage=document.getElementById("vehicleMileage").value.trim();
+ const technician=document.getElementById("technicianName").value.trim();
+ if(!registration||!makeModel||!technician)return;
+ const v={id:id(),registration,makeModel,mileage,technician,createdAt:new Date().toISOString()};
+ const next=[...sessions,v];
+ if(!storeSessions(next,inspectionRecords,v.id))return;
+ sessions=next;activeId=v.id;vehicleForm.reset();vehicleForm.hidden=true;renderVehicles();
+};
+vehicleSelect.onchange=()=>{
+ if(capturedFinding){alert("Finish or cancel the current review first.");vehicleSelect.value=activeId||"";return;}
+ const nextId=vehicleSelect.value;
+ if(!sessions.some(s=>s.id===nextId))return;
+ if(!storeSessions(sessions,inspectionRecords,nextId)){vehicleSelect.value=activeId||"";return;}
+ activeId=nextId;renderVehicles();
+};
+renderVehicles();
