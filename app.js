@@ -942,7 +942,7 @@ captureBtn.onclick=()=>{
 function updateDecision(){
  const isAir=capturedFinding && capturedFinding.label.startsWith("AIR_FILTER_");
  const isOverride=decisionEl.value==="override";
- assessmentEl.disabled=!isOverride && (isAir || decisionEl.value==="review");
+ assessmentEl.disabled=decisionEl.value==="review" || (!isOverride && isAir);
  if(decisionEl.value==="review") assessmentEl.value="Unable to determine";
  if(decisionEl.value==="confirm" && isAir) assessmentEl.value=capturedFinding.aiSuggestion;
 }
@@ -959,6 +959,9 @@ document.getElementById("saveFindingBtn").onclick=()=>{
  const decision=decisionEl.value;
  const assessment=decision==="review"?"Further inspection required":
   (decision==="confirm"&&!isAir?"Component identification confirmed":assessmentEl.value);
+ if(decision==="override" && assessment==="Unable to determine" && !remarksEl.value.trim()){
+  alert("Add a remark explaining why the AI finding was overridden.");return;
+ }
  if(decision==="override" && isAir && assessment===capturedFinding.aiSuggestion){
   alert("Choose a different assessment for an override.");return;
  }
