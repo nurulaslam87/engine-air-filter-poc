@@ -1055,3 +1055,46 @@ document.getElementById("clearRecordsBtn").onclick=()=>{
  }
 };
 renderRecords();
+
+const vehicleSelect=document.getElementById("vehicleSelect");
+const vehicleForm=document.getElementById("vehicleForm");
+function renderVehicles(){
+ vehicleSelect.replaceChildren();
+ if(!sessions.length){
+  const o=document.createElement("option");o.value="";o.textContent="No inspections yet";vehicleSelect.appendChild(o);
+ }
+ for(const v of sessions){
+  const o=document.createElement("option");o.value=v.id;
+  o.textContent=v.registration+" — "+v.makeModel;vehicleSelect.appendChild(o);
+ }
+ vehicleSelect.value=activeId||"";
+ const v=activeSession();
+ document.getElementById("vehicleInfo").textContent=v?
+  "Registration: "+v.registration+" | "+v.makeModel+" | "+(v.mileage||"Not recorded")+" km | Technician: "+(v.technician||"Not recorded")+" | Date: "+new Date(v.createdAt).toLocaleString()+" | ID: "+v.id:
+  "Create a vehicle inspection before saving findings.";
+ captureBtn.disabled=!v||!stableFinding;
+ renderRecords();
+}
+document.getElementById("newVehicleBtn").onclick=()=>{vehicleForm.hidden=!vehicleForm.hidden;};
+document.getElementById("cancelVehicleBtn").onclick=()=>{vehicleForm.reset();vehicleForm.hidden=true;};
+vehicleForm.onsubmit=e=>{
+ e.preventDefault();
+ if(capturedFinding){alert("Finish or cancel the current review first.");return;}
+ const registration=document.getElementById("vehicleReg").value.trim().toUpperCase();
+ const makeModel=document.getElementById("vehicleModel").value.trim();
+ const mileage=document.getElementById("vehicleMileage").value.trim();
+ const technician=document.getElementById("technicianName").value.trim();
+ if(!registration||!makeModel||!technician)return;
+ const v={id:id(),registration,makeModel,mileage,technician,createdAt:new Date().toISOString()};
+ const next=[...sessions,v];
+ if(!storeSessions(next,inspectionRecords,v.id))return;
+ sessions=next;activeId=v.id;vehicleForm.reset();vehicleForm.hidden=true;renderVehicles();
+};
+vehicleSelect.onchange=()=>{
+ if(capturedFinding){alert("Finish or cancel the current review first.");vehicleSelect.value=activeId||"";return;}
+ const nextId=vehicleSelect.value;
+ if(!sessions.some(s=>s.id===nextId))return;
+ if(!storeSessions(sessions,inspectionRecords,nextId)){vehicleSelect.value=activeId||"";return;}
+ activeId=nextId;renderVehicles();
+};
+renderVehicles();
