@@ -1534,18 +1534,18 @@ function handleVoiceCommand(raw){
   else voiceStatus.textContent="No stable AI detection to capture.";
  }else if(phrase.includes("next step")){
   if(capturedFinding){voiceStatus.textContent="Finish reviewing the captured finding first.";return;}
-  if(document.getElementById("arGuidePanel").hidden)showMode("ar");
+  if(document.getElementById("arGuidePanel").hidden){openVoiceCamera("ar");return;}
   const next=document.getElementById("arNext");
   if(!next.disabled)next.click();
   else voiceStatus.textContent="Already at the final step.";
  }else if(phrase.includes("previous step")||phrase.includes("back step")){
   if(capturedFinding){voiceStatus.textContent="Finish reviewing the captured finding first.";return;}
-  if(document.getElementById("arGuidePanel").hidden)showMode("ar");
+  if(document.getElementById("arGuidePanel").hidden){openVoiceCamera("ar");return;}
   const previous=document.getElementById("arPrevious");
   if(!previous.disabled)previous.click();
   else voiceStatus.textContent="Already at the first step.";
  }else if(phrase.includes("repeat step")||phrase.includes("read step")){
-  if(document.getElementById("arGuidePanel").hidden)showMode("ar");
+  if(document.getElementById("arGuidePanel").hidden){openVoiceCamera("ar");return;}
   speakArStep();
  }else if(phrase.includes("stop reading")||phrase.includes("be quiet")){
   cancelStepSpeech();
