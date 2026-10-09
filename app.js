@@ -1030,12 +1030,32 @@ document.getElementById("saveFindingBtn").onclick=()=>{
  capturedFinding=null;inspectionPanel.hidden=true;
  renderRecords();
 };
-const CHECKLIST_COMPONENTS=["Engine Air Filter","Brake Pad","Spark Plug"];
+const MANUAL_ITEMS={
+ "Engine Oil Level":["Within specified range","Below MIN","Above MAX","Unable to determine","Not inspected","Not applicable"],
+ "Engine Oil Appearance":["Normal appearance","Dark/discoloured","Milky/emulsified","Visible contamination","Unable to determine","Not inspected","Not applicable"],
+ "Coolant Level":["Within specified range","Below MIN","Above MAX","Unable to determine","Not inspected","Not applicable"],
+ "Coolant Appearance":["Normal appearance","Discoloured","Visible contamination","Signs of oil mixing","Unable to determine","Not inspected","Not applicable"],
+ "Brake Fluid Level":["Within specified range","Below MIN","Above MAX","Visible contamination","Unable to determine","Not inspected","Not applicable"],
+ "Tyre Tread":["Above wear limit","Near wear limit","At/below wear limit","Uneven wear","Not measured","Not inspected","Not applicable"],
+ "Tyre Condition":["No visible defects","Cut","Bulge","Cracking","Foreign object embedded","Uneven wear","Not inspected","Not applicable"],
+ "Tyre Pressure":["Within vehicle specification","Below specification","Above specification","Not measured","Not inspected","Not applicable"],
+ "Battery Visual Condition":["No visible defects","Terminal corrosion","Loose connection","Damaged casing","Not inspected","Not applicable"],
+ "Exterior Lights":["Operating normally","Not operating","Intermittent operation","Damaged lens","Not inspected","Not applicable"],
+ "Wiper Blades":["Wiping normally","Streaking","Torn rubber","Not operating","Not inspected","Not applicable"],
+ "Drive Belt Visual Condition":["No visible defects","Cracked","Frayed","Glazed","Loose","Not inspected","Not applicable"],
+ "Visible Fluid Leaks":["No visible leak","Seepage","Active leak","Unable to determine","Not inspected","Not applicable"]
+};
+const MANUAL_NONFINDINGS=["Not inspected","Not applicable","Not measured"];
+function manualChecklistItems(){return Object.keys(MANUAL_ITEMS);}
+const CHECKLIST_COMPONENTS=["Engine Air Filter","Brake Pad","Spark Plug",...manualChecklistItems()];
 function checklistFor(sessionId){
  return CHECKLIST_COMPONENTS.map(component=>{
   const records=inspectionRecords.filter(r=>r.sessionId===sessionId&&r.component===component);
   const last=records[records.length-1];
-  return {component,status:!last?"Pending":last.decision==="review"?"Requires Further Inspection":"Completed",basis:!last?"No saved finding":component==="Engine Air Filter"?"Technician: "+last.technicianAssessment:"Identification reviewed; condition not assessed"};
+  const manual=!!MANUAL_ITEMS[component];
+  const status=!last?"Pending":last.decision==="review"?"Requires Further Inspection":last.decision==="not_inspected"?"Not Inspected":last.decision==="not_applicable"?"Not Applicable":"Completed";
+  const basis=!last?"No saved finding":manual?(last.technicianAssessment||"Recorded"):(component==="Engine Air Filter"?"Technician: "+last.technicianAssessment:"Identification reviewed; condition not assessed");
+  return {component,status,basis};
  });
 }
 function renderChecklist(){
@@ -1044,7 +1064,7 @@ function renderChecklist(){
  container.replaceChildren();
  if(!activeSession()){progress.textContent="Select a vehicle to view progress.";return;}
  const items=checklistFor(activeId);
- progress.textContent=items.filter(x=>x.status==="Completed").length+" of 3 component reviews completed";
+ progress.textContent=items.filter(x=>x.status==="Completed").length+" of "+items.length+" component reviews completed";
  for(const item of items){
   const row=document.createElement("div");row.className="checklistItem";
   const left=document.createElement("div");
@@ -1067,7 +1087,7 @@ function renderRecords(){
   "Browser storage is unavailable. Do not rely on records being retained.";
  for(const r of selectedRecords){
   const li=document.createElement("li");
-  li.textContent=r.component+" | AI: "+r.aiSuggestion+
+  li.textContent=r.component+" | "+(r.source==="manual"?"Manual: ":"AI: ")+r.aiSuggestion+
    " | Technician: "+r.technicianAssessment+
    " | "+r.decision+
    (r.remarks?" | "+r.remarks:"");
@@ -1118,6 +1138,7 @@ function renderVehicles(){
  }
  vehicleSelect.value=activeId||"";
  const v=activeSession();
+ document.getElementById("saveManualBtn").disabled=!v;
  activeVehicleCard.replaceChildren();
  if(v){
   const status=document.createElement("div");status.className="status";status.textContent="● ACTIVE INSPECTION";
@@ -1209,10 +1230,58 @@ document.getElementById("reportBtn").onclick=()=>{
  for(const finding of findings){
   const tr=document.createElement("tr");
   reportCell(tr,finding.component);
-  reportCell(tr,(finding.aiSuggestion||"Not recorded")+(typeof finding.confidence==="number"?" ("+(finding.confidence*100).toFixed(1)+"% AI confidence)":""));
+  reportCell(tr,(finding.source==="manual"?"Manual observation: ":"")+(finding.aiSuggestion||"Not recorded")+(typeof finding.confidence==="number"?" ("+(finding.confidence*100).toFixed(1)+"% AI confidence)":""));
   reportCell(tr,finding.technicianAssessment);
   reportCell(tr,(finding.decision||"Not recorded")+(finding.remarks?" — "+finding.remarks:"")+(finding.savedAt?"\nSaved: "+new Date(finding.savedAt).toLocaleString():""));
   rows.appendChild(tr);
  }
  window.print();
+};
+
+/* V6.8 manual servicing: independent of camera; same per-vehicle persistence. */
+const manualForm=document.getElementById("manualForm");
+const manualComponent=document.getElementById("manualComponent");
+const manualConditions=document.getElementById("manualConditions");
+for(const name of manualChecklistItems()){
+ const opt=document.createElement("option");opt.value=name;opt.textContent=name;manualComponent.appendChild(opt);
+}
+function renderManualOptions(){
+ manualConditions.replaceChildren();
+ for(const descriptor of MANUAL_ITEMS[manualComponent.value]||[]){
+  const label=document.createElement("label");
+  const checkbox=document.createElement("input");checkbox.type="checkbox";checkbox.value=descriptor;
+  checkbox.onchange=()=>{
+   if(checkbox.checked && (MANUAL_NONFINDINGS.includes(descriptor)||descriptor==="Unable to determine")){
+    for(const other of manualConditions.querySelectorAll("input"))if(other!==checkbox)other.checked=false;
+   }else if(checkbox.checked){
+    for(const other of manualConditions.querySelectorAll("input"))if(MANUAL_NONFINDINGS.includes(other.value)||other.value==="Unable to determine")other.checked=false;
+   }
+  };
+  label.append(checkbox,document.createTextNode(descriptor));manualConditions.appendChild(label);
+ }
+}
+manualComponent.onchange=renderManualOptions;
+renderManualOptions();
+manualForm.onsubmit=e=>{
+ e.preventDefault();
+ if(!activeSession()){alert("Create or select a vehicle first.");return;}
+ if(capturedFinding){alert("Finish or cancel the current AI review first.");return;}
+ const descriptors=Array.from(manualConditions.querySelectorAll("input:checked"),x=>x.value);
+ if(!descriptors.length){alert("Select at least one observed condition.");return;}
+ const location=document.getElementById("manualLocation").value;
+ const measurement=document.getElementById("manualMeasurement").value.trim();
+ const remarks=document.getElementById("manualRemarks").value.trim();
+ const nonFinding=descriptors[0];
+ const decision=nonFinding==="Not inspected"?"not_inspected":nonFinding==="Not applicable"?"not_applicable":nonFinding==="Unable to determine"||nonFinding==="Not measured"?"review":"manual";
+ const component=manualComponent.value;
+ const finding={
+  sessionId:activeId,source:"manual",component,label:"MANUAL",
+  aiSuggestion:"Not used",technicianAssessment:descriptors.join("; ")+(measurement?" | Measurement: "+measurement:"")+(location?" | "+location:""),
+  decision,remarks,savedAt:new Date().toISOString()
+ };
+ const next=[...inspectionRecords,finding];
+ if(!storeSessions(sessions,next,activeId))return;
+ inspectionRecords=next;
+ manualForm.reset();renderManualOptions();renderVehicles();
+ alert("Manual finding saved for "+activeSession().registration+".");
 };

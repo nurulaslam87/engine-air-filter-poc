@@ -231,6 +231,12 @@ footer{
 .checklistStatus.review{background:#513b14;color:#fcd34d}
 .checklistNote{font-size:11px;color:#9da7b3;line-height:1.5;margin-top:10px}
 @media print{#printReport h3{margin:15px 0 7px}}
+#manualPanel{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-top:10px}
+#manualPanel select,#manualPanel input,#manualPanel textarea{width:100%;background:#0d1117;color:#fff;border:1px solid #465161;border-radius:7px;padding:11px;margin:5px 0 12px;font-size:14px}
+.manualHint{font-size:12px;color:#b7c0cc;line-height:1.5}
+.manualConditions{display:grid;gap:7px;margin:8px 0 12px}
+.manualConditions label{display:flex;align-items:flex-start;gap:9px;background:#0d1117;border-radius:7px;padding:10px;font-size:13px}
+.manualConditions input{width:auto!important;margin:0!important}
 </style>
 </head>
 
@@ -327,6 +333,23 @@ footer{
   <button id="cancelFindingBtn" type="button">Cancel</button>
  </div>
 </section>
+<section id="manualPanel" aria-label="Manual basic servicing inspection">
+ <div class="resultTitle">Basic servicing — manual inspection</div>
+ <p class="manualHint">No camera required. Select the observed condition; record measurements and remarks when relevant.</p>
+ <form id="manualForm">
+  <label class="fieldLabel" for="manualComponent">Inspection item</label>
+  <select id="manualComponent" required></select>
+  <label class="fieldLabel" for="manualLocation">Location (if applicable)</label>
+  <select id="manualLocation"><option value="">Not location-specific</option><option>Front left</option><option>Front right</option><option>Rear left</option><option>Rear right</option></select>
+  <div class="fieldLabel">Observed condition(s)</div>
+  <div id="manualConditions" class="manualConditions"></div>
+  <label class="fieldLabel" for="manualMeasurement">Measurement (optional)</label>
+  <input id="manualMeasurement" maxlength="100" placeholder="e.g. 3.5 mm, 220 kPa, 12.6 V">
+  <label class="fieldLabel" for="manualRemarks">Technician remarks / recommended action (optional)</label>
+  <textarea id="manualRemarks" maxlength="600" placeholder="Additional observations or follow-up action"></textarea>
+  <button type="submit" id="saveManualBtn">Save Manual Finding</button>
+ </form>
+</section>
 <section id="checklistPanel" aria-label="Vehicle inspection checklist">
  <div class="resultTitle">Vehicle inspection checklist</div>
  <div id="checklistProgress" class="checklistProgress">Select a vehicle to view inspection progress.</div>
@@ -386,7 +409,7 @@ footer{
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=67"></script>
+<script src="./app.js?v=68"></script>
 
 </body>
 </html>
