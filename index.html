@@ -193,6 +193,15 @@ footer{
 #recordList{padding-left:20px;font-size:13px;line-height:1.5}
 #recordList li{margin-bottom:8px;overflow-wrap:anywhere}
 #clearRecordsBtn{background:#374151;font-size:12px;padding:9px}
+#historyPanel[hidden]{display:none}
+.activeVehicleCard{background:#0d1117;border:1px solid #2f6143;border-radius:10px;padding:13px;margin:8px 0}
+.activeVehicleCard strong{display:block;font-size:21px;margin:5px 0}
+.activeVehicleCard .muted{font-size:12px;color:#b7c0cc;line-height:1.6}
+.activeVehicleCard .status{font-size:11px;color:#86efac;font-weight:bold}
+.historyButton{background:#374151;margin-top:8px}
+.historyEntry{background:#0d1117;border:1px solid #465161;text-align:left;padding:12px;margin:7px 0;font-size:14px}
+.historyEntry .muted{display:block;font-size:11px;color:#b7c0cc;margin-top:4px;font-weight:normal}
+.vehicleDetails{font-size:11px;color:#9da7b3;line-height:1.6;margin-top:8px;overflow-wrap:anywhere}
 </style>
 </head>
 
@@ -251,11 +260,17 @@ footer{
 
   
 <section id="vehiclePanel" style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-top:10px">
-<div class="resultTitle">Vehicle inspection session</div>
-<label class="fieldLabel" for="vehicleSelect">Select vehicle inspection</label>
-<select id="vehicleSelect" style="width:100%;padding:11px;background:#0d1117;color:white"></select>
-<div id="vehicleInfo" style="font-size:12px;margin:8px 0;overflow-wrap:anywhere"></div>
-<button id="newVehicleBtn" type="button" style="background:#2563eb">New Vehicle Inspection</button>
+<div class="resultTitle">Current vehicle inspection</div>
+<div id="activeVehicleCard" class="activeVehicleCard" aria-live="polite"></div>
+<button id="historyBtn" type="button" class="historyButton" aria-expanded="false" aria-controls="historyPanel">View Previous Inspections</button>
+<div id="historyPanel" hidden>
+ <div class="fieldLabel">Select an inspection to view its saved findings</div>
+ <div id="historyList"></div>
+ <label class="fieldLabel" for="vehicleSelect">All vehicle inspections</label>
+ <select id="vehicleSelect" style="width:100%;padding:11px;background:#0d1117;color:white"></select>
+</div>
+<div id="vehicleInfo" class="vehicleDetails"></div>
+<button id="newVehicleBtn" type="button" style="background:#2563eb;margin-top:9px">+ New Vehicle Inspection</button>
 <form id="vehicleForm" hidden style="margin-top:10px">
 <label class="fieldLabel">Vehicle registration *</label><input id="vehicleReg" required maxlength="30" placeholder="Registration" style="width:100%;padding:10px">
 <label class="fieldLabel">Make and model *</label><input id="vehicleModel" required maxlength="80" placeholder="Make and model" style="width:100%;padding:10px">
@@ -325,7 +340,7 @@ footer{
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=65"></script>
+<script src="./app.js?v=651"></script>
 
 </body>
 </html>
