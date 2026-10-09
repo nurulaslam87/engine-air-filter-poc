@@ -274,6 +274,14 @@ header{height:auto;min-height:78px}
 .arActions button{flex:1}
 #arRecord{background:#238636}
 @media(max-width:430px){.modeTab{font-size:10px;padding:9px 2px;min-height:54px}}
+#arQuickEntry{margin-top:14px;border-top:1px solid #30363d;padding-top:14px}
+#arQuickEntry .manualConditions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}
+#arQuickEntry .manualConditions label{display:flex;align-items:center;gap:8px;background:#0d1117;border:1px solid #30363d;padding:10px;border-radius:8px;font-size:12px;min-height:52px}
+#arQuickEntry .manualConditions label:has(input:checked){background:#153e2b;border-color:#238636}
+#arQuickEntry input[type=checkbox]{width:18px;height:18px;accent-color:#34d399;flex-shrink:0}
+#arQuickEntry select,#arQuickEntry input:not([type=checkbox]),#arQuickEntry textarea{display:block;width:100%;background:#0d1117;color:white;border:1px solid #465161;padding:10px;border-radius:8px}
+#arQuickStatus{color:#86efac;font-size:13px;margin:9px 0}
+@media(max-width:380px){#arQuickEntry .manualConditions{grid-template-columns:1fr}}
 </style>
 </head>
 
@@ -395,7 +403,22 @@ header{height:auto;min-height:78px}
   <button id="arPrevious" type="button" class="secondaryAction">Previous</button>
   <button id="arNext" type="button" class="secondaryAction">Next Step</button>
  </div>
- <button id="arRecord" type="button">Record Inspection Finding</button>
+ <div id="arQuickEntry">
+  <div class="sectionHeading">Record your observation</div>
+  <p class="manualHint">Select what you observed. The camera does not assess condition automatically.</p>
+  <div id="arQuickConditions" class="manualConditions"></div>
+  <button type="button" id="arQuickMore" class="secondaryAction" aria-expanded="false">+ Add location, measurement or remarks</button>
+  <div id="arQuickExtras" hidden>
+   <label class="fieldLabel" for="arQuickLocation">Location</label>
+   <select id="arQuickLocation"><option value="">Not location-specific</option><option>Front left</option><option>Front right</option><option>Rear left</option><option>Rear right</option></select>
+   <label class="fieldLabel" for="arQuickMeasurement">Measurement (optional)</label>
+   <input id="arQuickMeasurement" maxlength="100" placeholder="e.g. 3.5 mm or 220 kPa">
+   <label class="fieldLabel" for="arQuickRemarks">Remarks (optional)</label>
+   <textarea id="arQuickRemarks" maxlength="600" placeholder="Additional observations"></textarea>
+  </div>
+  <button id="arRecord" type="button">Save Finding to Vehicle</button>
+  <div id="arQuickStatus" role="status" aria-live="polite"></div>
+ </div>
  <p class="manualHint">Follow the vehicle manufacturer's procedure. Do not operate the phone while driving. Stop the engine and observe relevant safety precautions before checking components.</p>
 </section>
 <section id="manualPanel" class="modePage" aria-label="Manual basic servicing inspection">
@@ -479,7 +502,7 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=702"></script>
+<script src="./app.js?v=71"></script>
 
 <script>
 /* Independent navigation fallback: tabs remain usable if AI startup fails. */

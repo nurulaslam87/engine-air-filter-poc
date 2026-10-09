@@ -1373,12 +1373,59 @@ document.getElementById("arCameraBtn").onclick=async()=>{
   document.getElementById("arCameraStatus").textContent="Camera unavailable: "+(e.message||"Permission denied")+" — check browser camera permission and close other camera apps.";
  }
 };
+const arQuickConditions=document.getElementById("arQuickConditions");
+const arQuickStatus=document.getElementById("arQuickStatus");
+function renderArConditions(){
+ arQuickConditions.replaceChildren();
+ arQuickStatus.textContent="";
+ for(const descriptor of MANUAL_ITEMS[arTask.value]||[]){
+  const label=document.createElement("label");
+  const cb=document.createElement("input");cb.type="checkbox";cb.value=descriptor;
+  cb.onchange=()=>{
+   if(!cb.checked)return;
+   const exclusive=MANUAL_NONFINDINGS.includes(descriptor)||descriptor==="Unable to determine";
+   for(const other of arQuickConditions.querySelectorAll("input")){
+    if(other!==cb&&(exclusive||MANUAL_NONFINDINGS.includes(other.value)||other.value==="Unable to determine"))other.checked=false;
+   }
+  };
+  label.append(cb,document.createTextNode(descriptor));arQuickConditions.appendChild(label);
+ }
+}
+const arMore=document.getElementById("arQuickMore");
+const arExtras=document.getElementById("arQuickExtras");
+arMore.onclick=()=>{
+ arExtras.hidden=!arExtras.hidden;
+ arMore.setAttribute("aria-expanded",String(!arExtras.hidden));
+ arMore.textContent=arExtras.hidden?"+ Add location, measurement or remarks":"Hide additional details";
+};
+const priorArTaskChange=arTask.onchange;
+arTask.onchange=()=>{
+ priorArTaskChange();
+ renderArConditions();
+};
 document.getElementById("arRecord").onclick=()=>{
  if(!activeSession()){alert("Create or select a vehicle inspection first.");return;}
- manualComponent.value=arTask.value;
- renderManualOptions();
- showMode("manual");
- document.getElementById("manualPanel").scrollIntoView({behavior:"smooth",block:"start"});
+ if(capturedFinding){alert("Finish the current AI review first.");return;}
+ const descriptors=Array.from(arQuickConditions.querySelectorAll("input:checked"),x=>x.value);
+ if(!descriptors.length){arQuickStatus.textContent="Select at least one observed condition.";return;}
+ const location=document.getElementById("arQuickLocation").value;
+ const measurement=document.getElementById("arQuickMeasurement").value.trim();
+ const remarks=document.getElementById("arQuickRemarks").value.trim();
+ const first=descriptors[0];
+ const decision=first==="Not inspected"?"not_inspected":first==="Not applicable"?"not_applicable":first==="Unable to determine"||first==="Not measured"?"review":"manual";
+ const finding={
+  sessionId:activeId,source:"manual",component:arTask.value,label:"MANUAL",
+  aiSuggestion:"Not used",technicianAssessment:descriptors.join("; ")+(measurement?" | Measurement: "+measurement:"")+(location?" | "+location:""),
+  decision,remarks,savedAt:new Date().toISOString()
+ };
+ const next=[...inspectionRecords,finding];
+ if(!storeSessions(sessions,next,activeId)){arQuickStatus.textContent="Unable to save finding.";return;}
+ inspectionRecords=next;
+ renderVehicles();
+ renderArConditions();
+ for(const field of ["arQuickLocation","arQuickMeasurement","arQuickRemarks"])document.getElementById(field).value="";
+ arQuickStatus.textContent="Saved "+finding.component+" to "+activeSession().registration+".";
 };
+renderArConditions();
 updateArGuide();
 showMode("manual");
