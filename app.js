@@ -1034,6 +1034,7 @@ function renderRecords(){
  recordList.replaceChildren();
  const selectedRecords=inspectionRecords.filter(r=>r.sessionId===activeId);
  recordCount.textContent=String(selectedRecords.length);
+ document.getElementById("reportBtn").disabled=!activeSession() || selectedRecords.length===0;
  const storageStatus=document.getElementById("storageStatus");
  storageStatus.textContent=storageAvailable?
   "Saved on this device only. Records remain after refresh but may be lost if browser data is cleared.":
@@ -1143,3 +1144,43 @@ vehicleSelect.onchange=()=>{
  if(!chooseVehicle(nextId))vehicleSelect.value=activeId||"";
 };
 renderVehicles();
+
+/* V6.6 — build a printable A4 report from the selected vehicle only.
+   Browser print/share allows Save as PDF without uploading inspection data. */
+function reportCell(row,value){
+ const td=document.createElement("td");
+ td.textContent=String(value??"");
+ row.appendChild(td);
+}
+function reportField(parent,label,value){
+ const div=document.createElement("div");
+ const title=document.createElement("b");title.textContent=label;
+ const content=document.createElement("span");content.textContent=String(value??"Not recorded");
+ div.append(title,content);parent.appendChild(div);
+}
+document.getElementById("reportBtn").onclick=()=>{
+ const vehicle=activeSession();
+ if(!vehicle){alert("Select a vehicle inspection first.");return;}
+ const findings=inspectionRecords.filter(r=>r.sessionId===vehicle.id);
+ if(!findings.length){alert("Save at least one finding before generating a report.");return;}
+ const metadata=document.getElementById("reportMetadata");
+ const rows=document.getElementById("reportRows");
+ metadata.replaceChildren();rows.replaceChildren();
+ reportField(metadata,"Vehicle Registration",vehicle.registration);
+ reportField(metadata,"Make / Model",vehicle.makeModel);
+ reportField(metadata,"Mileage",vehicle.mileage?vehicle.mileage+" km":"Not recorded");
+ reportField(metadata,"Technician",vehicle.technician||"Not recorded");
+ reportField(metadata,"Inspection Date",new Date(vehicle.createdAt).toLocaleString());
+ reportField(metadata,"Inspection ID",vehicle.id);
+ reportField(metadata,"Report Generated",new Date().toLocaleString());
+ reportField(metadata,"Number of Findings",findings.length);
+ for(const finding of findings){
+  const tr=document.createElement("tr");
+  reportCell(tr,finding.component);
+  reportCell(tr,(finding.aiSuggestion||"Not recorded")+(typeof finding.confidence==="number"?" ("+(finding.confidence*100).toFixed(1)+"% AI confidence)":""));
+  reportCell(tr,finding.technicianAssessment);
+  reportCell(tr,(finding.decision||"Not recorded")+(finding.remarks?" — "+finding.remarks:"")+(finding.savedAt?"\nSaved: "+new Date(finding.savedAt).toLocaleString():""));
+  rows.appendChild(tr);
+ }
+ window.print();
+};
