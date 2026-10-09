@@ -92,8 +92,12 @@ const recordList=document.getElementById("recordList");
 const recordCount=document.getElementById("recordCount");
 
 
-ort.env.wasm.wasmPaths=
-  "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+if(typeof ort!=="undefined"){
+ ort.env.wasm.wasmPaths="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+}else{
+ statusEl.textContent="AI engine unavailable — check internet connection or content blocking.";
+ resultEl.textContent="Manual checklist and AR guide remain available.";
+}
 
 
 // --------------------------------------------------
@@ -103,6 +107,7 @@ ort.env.wasm.wasmPaths=
 (async()=>{
  try{
 
+  if(typeof ort==="undefined")throw new Error("AI engine library could not load. Check internet connection and reload.");
   session=await ort.InferenceSession.create(
    MODEL_URL,
    {

@@ -479,7 +479,32 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=701"></script>
+<script src="./app.js?v=702"></script>
 
+<script>
+/* Independent navigation fallback: tabs remain usable if AI startup fails. */
+(function(){
+ const tabs=document.getElementById("modeTabs");
+ const panels={manual:["manualPanel","checklistPanel"],ai:["aiModePanel"],ar:["arGuidePanel"],results:["recordsPanel"]};
+ if(!tabs)return;
+ function select(mode){
+  for(const [name,ids] of Object.entries(panels)){
+   for(const id of ids){const el=document.getElementById(id);if(el)el.hidden=name!==mode;}
+  }
+  for(const btn of tabs.querySelectorAll("[data-mode]")){
+   const selected=btn.dataset.mode===mode;
+   btn.classList.toggle("selected",selected);
+   btn.setAttribute("aria-pressed",String(selected));
+  }
+ }
+ tabs.addEventListener("click",function(event){
+  const btn=event.target.closest("[data-mode]");
+  if(!btn)return;
+  if(typeof showMode==="function"){try{showMode(btn.dataset.mode);return;}catch(error){console.error("Tab navigation error",error);}}
+  select(btn.dataset.mode);
+ });
+ if(typeof showMode!=="function")select("manual");
+})();
+</script>
 </body>
 </html>
