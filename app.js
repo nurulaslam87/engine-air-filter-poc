@@ -1469,10 +1469,9 @@ function scheduleVoiceRestart(){
   if(handsFreeEnabled)startVoiceCycle();
  },Math.min(800+voiceRetryCount*700,3000));
 }
-function speakArStep(){
- const text=document.getElementById("arStepText").textContent;
+function speakTextAloud(text){
  if(!speechSynthesisAvailable){
-  voiceStatus.textContent="Spoken guidance is unavailable in this browser. Read the instruction on screen.";
+  voiceStatus.textContent="Speech playback is not supported in this browser.";
   return;
  }
  cancelStepSpeech();
@@ -1485,19 +1484,49 @@ function speakArStep(){
  voiceStarting=false;
  if(previous){try{previous.abort();}catch(_){}}
  const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang="en-SG";
+ const voices=window.speechSynthesis.getVoices();
+ const english=voices.find(v=>v.lang.toLowerCase()==="en-sg")||
+               voices.find(v=>v.lang.toLowerCase().startsWith("en-"))||
+               voices.find(v=>v.lang.toLowerCase().startsWith("en"));
+ if(english){utterance.voice=english;utterance.lang=english.lang;}
+ else utterance.lang="en-US";
  utterance.rate=0.92;
- utterance.onend=utterance.onerror=()=>{
+ utterance.volume=1;
+ utterance.onstart=()=>{
+  if(token===speechGeneration)voiceStatus.textContent="🔊 Speaking now. If silent, check phone media volume and silent mode.";
+ };
+ utterance.onend=()=>{
   if(token!==speechGeneration)return;
   speakingStep=false;
-  if(handsFreeEnabled){
-   voiceStatus.textContent="Instruction finished. Listening for your next command.";
-   scheduleVoiceRestart();
-  }
+  voiceStatus.textContent="Speech finished. Listening for your next command.";
+  if(handsFreeEnabled)scheduleVoiceRestart();
  };
- voiceStatus.textContent="Reading inspection step aloud…";
- try{window.speechSynthesis.speak(utterance);}
- catch(e){speakingStep=false;voiceStatus.textContent="Speech playback failed: "+e.message;scheduleVoiceRestart();}
+ utterance.onerror=event=>{
+  if(token!==speechGeneration)return;
+  speakingStep=false;
+  voiceStatus.textContent="Speech playback error: "+(event.error||"unknown")+". Tap Test Speaker / Enable Audio.";
+  if(handsFreeEnabled)scheduleVoiceRestart();
+ };
+ voiceStatus.textContent="Preparing spoken instruction…";
+ try{
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.resume();
+  window.speechSynthesis.speak(utterance);
+ }catch(e){
+  speakingStep=false;
+  voiceStatus.textContent="Speech playback failed: "+e.message;
+  if(handsFreeEnabled)scheduleVoiceRestart();
+ }
+}
+function speakArStep(){
+ speakTextAloud(document.getElementById("arStepText").textContent);
+}
+const testSpeechBtn=document.getElementById("testSpeechBtn");
+if(testSpeechBtn){
+ testSpeechBtn.onclick=()=>{
+  speakTextAloud("AutoVision audio test. If you can hear this message, spoken inspection guidance is enabled.");
+ };
+ if(!speechSynthesisAvailable)testSpeechBtn.disabled=true;
 }
 window.autoVisionReadStep=()=>{if(handsFreeEnabled)speakArStep();};
 function openVoiceCamera(mode){
