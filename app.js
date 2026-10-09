@@ -1030,10 +1030,36 @@ document.getElementById("saveFindingBtn").onclick=()=>{
  capturedFinding=null;inspectionPanel.hidden=true;
  renderRecords();
 };
+const CHECKLIST_COMPONENTS=["Engine Air Filter","Brake Pad","Spark Plug"];
+function checklistFor(sessionId){
+ return CHECKLIST_COMPONENTS.map(component=>{
+  const records=inspectionRecords.filter(r=>r.sessionId===sessionId&&r.component===component);
+  const last=records[records.length-1];
+  return {component,status:!last?"Pending":last.decision==="review"?"Requires Further Inspection":"Completed",basis:!last?"No saved finding":component==="Engine Air Filter"?"Technician: "+last.technicianAssessment:"Identification reviewed; condition not assessed"};
+ });
+}
+function renderChecklist(){
+ const container=document.getElementById("checklistItems");
+ const progress=document.getElementById("checklistProgress");
+ container.replaceChildren();
+ if(!activeSession()){progress.textContent="Select a vehicle to view progress.";return;}
+ const items=checklistFor(activeId);
+ progress.textContent=items.filter(x=>x.status==="Completed").length+" of 3 component reviews completed";
+ for(const item of items){
+  const row=document.createElement("div");row.className="checklistItem";
+  const left=document.createElement("div");
+  const title=document.createElement("strong");title.textContent=item.component;
+  const note=document.createElement("small");note.textContent=item.basis;
+  left.append(title,note);
+  const status=document.createElement("span");status.className="checklistStatus "+(item.status==="Completed"?"completed":item.status==="Pending"?"":"review");
+  status.textContent=item.status;row.append(left,status);container.appendChild(row);
+ }
+}
 function renderRecords(){
  recordList.replaceChildren();
  const selectedRecords=inspectionRecords.filter(r=>r.sessionId===activeId);
  recordCount.textContent=String(selectedRecords.length);
+ renderChecklist();
  document.getElementById("reportBtn").disabled=!activeSession() || selectedRecords.length===0;
  const storageStatus=document.getElementById("storageStatus");
  storageStatus.textContent=storageAvailable?
@@ -1165,7 +1191,8 @@ document.getElementById("reportBtn").onclick=()=>{
  if(!findings.length){alert("Save at least one finding before generating a report.");return;}
  const metadata=document.getElementById("reportMetadata");
  const rows=document.getElementById("reportRows");
- metadata.replaceChildren();rows.replaceChildren();
+ const checklistRows=document.getElementById("reportChecklistRows");
+ metadata.replaceChildren();rows.replaceChildren();checklistRows.replaceChildren();
  reportField(metadata,"Vehicle Registration",vehicle.registration);
  reportField(metadata,"Make / Model",vehicle.makeModel);
  reportField(metadata,"Mileage",vehicle.mileage?vehicle.mileage+" km":"Not recorded");
@@ -1174,6 +1201,11 @@ document.getElementById("reportBtn").onclick=()=>{
  reportField(metadata,"Inspection ID",vehicle.id);
  reportField(metadata,"Report Generated",new Date().toLocaleString());
  reportField(metadata,"Number of Findings",findings.length);
+ for(const item of checklistFor(vehicle.id)){
+  const tr=document.createElement("tr");
+  reportCell(tr,item.component);reportCell(tr,item.status);reportCell(tr,item.basis);
+  checklistRows.appendChild(tr);
+ }
  for(const finding of findings){
   const tr=document.createElement("tr");
   reportCell(tr,finding.component);
