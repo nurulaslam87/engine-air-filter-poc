@@ -202,6 +202,25 @@ footer{
 .historyEntry{background:#0d1117;border:1px solid #465161;text-align:left;padding:12px;margin:7px 0;font-size:14px}
 .historyEntry .muted{display:block;font-size:11px;color:#b7c0cc;margin-top:4px;font-weight:normal}
 .vehicleDetails{font-size:11px;color:#9da7b3;line-height:1.6;margin-top:8px;overflow-wrap:anywhere}
+/* V6.6 print-ready A4 report */
+#printReport{display:none}
+@media print{
+ @page{size:A4;margin:15mm}
+ body{background:#fff!important;color:#111!important;font:11pt Arial,sans-serif!important}
+ header,#viewer,#panel,footer{display:none!important}
+ #printReport{display:block!important;color:#111!important}
+ .reportTop{border-bottom:3px solid #17623b;padding-bottom:12px;margin-bottom:15px}
+ .reportBrand{font-size:23pt;font-weight:800;color:#17623b}
+ .reportSubtitle{font-size:11pt;color:#555}
+ .reportMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+ .reportMeta div{padding:7px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}
+ .reportMeta b{display:block;font-size:8pt;color:#555;margin-bottom:3px}
+ #printReport table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}
+ #printReport th,#printReport td{border:1px solid #bbb;padding:7px;vertical-align:top;overflow-wrap:anywhere}
+ #printReport th{background:#e8efeb}
+ #printReport tr{break-inside:avoid}
+ #printReport .reportNotice{border-top:1px solid #aaa;margin-top:20px;padding-top:10px;font-size:9pt;color:#555;line-height:1.5}
+}
 </style>
 </head>
 
@@ -302,6 +321,8 @@ footer{
  <div class="resultTitle">Findings for selected vehicle (<span id="recordCount">0</span>)</div>
  <div id="storageStatus" style="font-size:11px;color:#9da7b3;margin:8px 0"></div>
  <ol id="recordList"></ol>
+ <button id="reportBtn" type="button" style="background:#2563eb;margin:10px 0 8px" disabled>Generate PDF Inspection Report</button>
+ <div id="reportHint" style="font-size:11px;color:#9da7b3;margin-bottom:8px">Select a vehicle with saved findings. Your device's print dialog lets you save the report as a PDF.</div>
  <button id="clearRecordsBtn" type="button">Clear Records</button>
 </section>
 <div id="supported">
@@ -334,13 +355,20 @@ footer{
 </div>
 
 
+<article id="printReport" aria-label="Printable vehicle inspection report">
+ <div class="reportTop"><div class="reportBrand">AutoVision AI</div><div class="reportSubtitle">Vehicle Visual Inspection Report</div></div>
+ <div id="reportMetadata" class="reportMeta"></div>
+ <h3>Inspection Findings</h3>
+ <table><thead><tr><th style="width:20%">Component</th><th style="width:21%">AI suggestion</th><th style="width:24%">Technician assessment</th><th style="width:35%">Decision / Remarks</th></tr></thead><tbody id="reportRows"></tbody></table>
+ <div class="reportNotice">AI-assisted visual inspection only. AI outputs are suggestions, not definitive diagnoses. The technician is responsible for verification, required measurements, further testing and final decisions. This report does not certify vehicle roadworthiness or safety.</div>
+</article>
 <footer>
   AI-assisted inspection • Technician makes the final decision
 </footer>
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=651"></script>
+<script src="./app.js?v=66"></script>
 
 </body>
 </html>
