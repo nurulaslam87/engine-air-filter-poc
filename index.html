@@ -250,6 +250,20 @@ footer{
 
 
   
+<section id="vehiclePanel" style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-top:10px">
+<div class="resultTitle">Vehicle inspection session</div>
+<label class="fieldLabel" for="vehicleSelect">Select vehicle inspection</label>
+<select id="vehicleSelect" style="width:100%;padding:11px;background:#0d1117;color:white"></select>
+<div id="vehicleInfo" style="font-size:12px;margin:8px 0;overflow-wrap:anywhere"></div>
+<button id="newVehicleBtn" type="button" style="background:#2563eb">New Vehicle Inspection</button>
+<form id="vehicleForm" hidden style="margin-top:10px">
+<label class="fieldLabel">Vehicle registration *</label><input id="vehicleReg" required maxlength="30" placeholder="Registration" style="width:100%;padding:10px">
+<label class="fieldLabel">Make and model *</label><input id="vehicleModel" required maxlength="80" placeholder="Make and model" style="width:100%;padding:10px">
+<label class="fieldLabel">Mileage (km)</label><input id="vehicleMileage" type="number" min="0" step="1" placeholder="Mileage" style="width:100%;padding:10px">
+<label class="fieldLabel">Technician *</label><input id="technicianName" required maxlength="80" placeholder="Technician" style="width:100%;padding:10px">
+<button type="submit" style="margin-top:8px">Start Inspection</button>
+<button type="button" id="cancelVehicleBtn" style="margin-top:6px;background:#374151">Cancel</button>
+</form></section>
 <button id="captureBtn" disabled type="button">Capture AI Finding</button>
 <section id="inspectionPanel" hidden>
  <div class="resultTitle">Technician review</div>
@@ -270,7 +284,7 @@ footer{
  </div>
 </section>
 <section id="recordsPanel">
- <div class="resultTitle">Current inspection records (<span id="recordCount">0</span>)</div>
+ <div class="resultTitle">Findings for selected vehicle (<span id="recordCount">0</span>)</div>
  <div id="storageStatus" style="font-size:11px;color:#9da7b3;margin:8px 0"></div>
  <ol id="recordList"></ol>
  <button id="clearRecordsBtn" type="button">Clear Records</button>
@@ -311,7 +325,7 @@ footer{
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=64"></script>
+<script src="./app.js?v=65"></script>
 
 </body>
 </html>
