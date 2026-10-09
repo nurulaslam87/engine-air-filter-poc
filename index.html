@@ -242,7 +242,7 @@ footer{
 header{height:auto;min-height:78px}
 #panel{padding:12px 12px 24px}
 #vehiclePanel,#manualPanel,#checklistPanel,#recordsPanel,#aiModePanel{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:16px;margin-top:12px}
-.modeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:14px}
+.modeTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px}
 .modeTab{font-size:12px;line-height:1.3;padding:12px 5px;background:#212b37;color:#b7c0cc;font-weight:700;border:1px solid #364253;min-height:56px}
 .modeTab.selected{background:#153e2b;color:#a7f3d0;border-color:#238636}
 .sectionHeading{font-size:17px;font-weight:800;margin:0 0 7px}
@@ -263,6 +263,17 @@ header{height:auto;min-height:78px}
 #aiModePanel #status{margin:10px 0}
 #recordsPanel #recordList{max-height:420px;overflow:auto}
 @media(max-width:370px){#manualPanel .manualConditions{grid-template-columns:1fr}.modeTab{font-size:11px}}
+#arGuidePanel select{width:100%;background:#0d1117;color:#fff;padding:12px;border:1px solid #465161;border-radius:8px;margin-bottom:12px}
+#arCameraFrame{position:relative;background:#050505;aspect-ratio:3/4;border-radius:12px;overflow:hidden}
+#arVideo{position:absolute;width:100%;height:100%;inset:0;object-fit:cover}
+#arOverlay{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(10,20,29,.86);padding:14px;border-radius:12px;border:1px solid #668099;pointer-events:none}
+#arStepCount{color:#86efac;font-size:12px;font-weight:700;margin-bottom:6px}
+#arStepText{font-size:16px;line-height:1.45;font-weight:700}
+#arCameraStatus{color:#aeb8c6;font-size:12px;margin:9px 0}
+.arActions{display:flex;gap:8px;margin:10px 0}
+.arActions button{flex:1}
+#arRecord{background:#238636}
+@media(max-width:430px){.modeTab{font-size:10px;padding:9px 2px;min-height:54px}}
 </style>
 </head>
 
@@ -362,11 +373,30 @@ header{height:auto;min-height:78px}
 <nav id="modeTabs" class="modeTabs" aria-label="Inspection mode">
  <button type="button" data-mode="manual" class="modeTab selected" aria-pressed="true">☑ Service Checklist</button>
  <button type="button" data-mode="ai" class="modeTab" aria-pressed="false">◎ AI Camera</button>
+ <button type="button" data-mode="ar" class="modeTab" aria-pressed="false">◈ AR Guide</button>
  <button type="button" data-mode="results" class="modeTab" aria-pressed="false">▤ Results & PDF</button>
 </nav>
 <section id="aiModePanel" class="modePage" hidden>
  <div class="sectionHeading">AI-assisted inspection</div>
  <p class="manualHint">Use the camera to identify supported components. Confirm each AI suggestion before saving.</p>
+</section>
+<section id="arGuidePanel" class="modePage" hidden>
+ <div class="sectionHeading">AR-Guided Servicing</div>
+ <p class="manualHint">Live camera guidance. Instructions are not anchored to vehicle parts and do not verify their location or condition.</p>
+ <label class="fieldLabel" for="arTask">Choose inspection task</label>
+ <select id="arTask"></select>
+ <div id="arCameraFrame">
+  <video id="arVideo" playsinline autoplay muted></video>
+  <div id="arOverlay"><div id="arStepCount"></div><div id="arStepText"></div></div>
+ </div>
+ <div id="arCameraStatus" role="status" aria-live="polite">Camera off</div>
+ <button id="arCameraBtn" type="button">Start AR Camera</button>
+ <div class="arActions">
+  <button id="arPrevious" type="button" class="secondaryAction">Previous</button>
+  <button id="arNext" type="button" class="secondaryAction">Next Step</button>
+ </div>
+ <button id="arRecord" type="button">Record Inspection Finding</button>
+ <p class="manualHint">Follow the vehicle manufacturer's procedure. Do not operate the phone while driving. Stop the engine and observe relevant safety precautions before checking components.</p>
 </section>
 <section id="manualPanel" class="modePage" aria-label="Manual basic servicing inspection">
  <div class="sectionHeading">Routine servicing</div>
@@ -449,7 +479,7 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=69"></script>
+<script src="./app.js?v=70"></script>
 
 </body>
 </html>
