@@ -1343,7 +1343,7 @@ function updateArGuide(){
  document.getElementById("arStepText").textContent=steps[arStep];
  document.getElementById("arPrevious").disabled=arStep===0;
  document.getElementById("arNext").disabled=arStep===steps.length-1;
- if(typeof speakArStep==="function" && typeof handsFreeEnabled!=="undefined" && handsFreeEnabled && document.getElementById("arGuidePanel").hidden===false)speakArStep();
+ if(window.autoVisionReadStep && document.getElementById("arGuidePanel").hidden===false)window.autoVisionReadStep();
 }
 function stopArCamera(){
  if(arStream){arStream.getTracks().forEach(track=>track.stop());arStream=null;}
@@ -1499,6 +1499,7 @@ function speakArStep(){
  try{window.speechSynthesis.speak(utterance);}
  catch(e){speakingStep=false;voiceStatus.textContent="Speech playback failed: "+e.message;scheduleVoiceRestart();}
 }
+window.autoVisionReadStep=()=>{if(handsFreeEnabled)speakArStep();};
 function openVoiceCamera(mode){
  if(capturedFinding&&mode!=="ai"){
   voiceStatus.textContent="Complete the pending AI finding review before switching modes.";
