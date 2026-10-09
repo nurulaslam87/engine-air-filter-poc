@@ -300,7 +300,7 @@ header{height:auto;min-height:78px}
 #voiceAssistant{background:#132231;border:1px solid #34536b;border-radius:10px;padding:10px;margin:8px 0}
 #voiceCommandBtn{background:#185a47;color:white;border:1px solid #42a981;border-radius:8px;padding:12px;font-weight:700;width:100%}
 #voiceCommandStatus{font-size:12px;line-height:1.5;color:#cbd5e1;margin:8px 0 0}
-#aiModePanel #voiceAssistant{order:0}
+
 </style>
 </head>
 
@@ -397,6 +397,7 @@ header{height:auto;min-height:78px}
   <button id="cancelFindingBtn" type="button">Cancel</button>
  </div>
 </section>
+<div id="voiceAssistant"><button type="button" id="voiceCommandBtn">🎤 Speak a command</button><p id="voiceCommandStatus" role="status" aria-live="polite">Voice commands: start camera, stop camera, capture finding, next step, previous step, AR guide, AI camera, service checklist, results. Microphone activates only when tapped.</p></div>
 <nav id="modeTabs" class="modeTabs" aria-label="Inspection mode">
  <button type="button" data-mode="manual" class="modeTab selected" aria-pressed="true">☑ Service Checklist</button>
  <button type="button" data-mode="ai" class="modeTab" aria-pressed="false">◎ AI Camera</button>
@@ -406,7 +407,7 @@ header{height:auto;min-height:78px}
 <section id="aiModePanel" class="modePage" hidden>
  <div class="sectionHeading">AI-assisted inspection</div>
  <p class="manualHint">AI highlights supported parts. Predictions require technician confirmation.</p>
- <div id="voiceAssistant"><button type="button" id="voiceCommandBtn">🎤 Speak a command</button><p id="voiceCommandStatus" role="status" aria-live="polite">Voice commands: start camera, stop camera, capture finding, next step, previous step, AR guide, AI camera, service checklist, results. Microphone activates only when tapped.</p></div>
+ 
  <div id="aiDetectionSummary" class="aiDetectionSummary" role="status" aria-live="polite">No stable AI detection yet</div>
  <div id="aiGuidance" class="aiGuidance" role="status" aria-live="polite"><strong>Inspection guidance · technician to verify</strong><p id="aiGuidanceText">Start the AI camera and point it at a supported component. Guidance appears after a stable detection.</p></div>
 </section>
