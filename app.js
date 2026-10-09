@@ -27,6 +27,18 @@ let candidate=null;
 let stableCount=0;
 
 const REQUIRED_STABLE_FRAMES=3;
+let stableFinding=null;
+let capturedFinding=null;
+const inspectionRecords=[];
+const captureBtn=document.getElementById("captureBtn");
+const inspectionPanel=document.getElementById("inspectionPanel");
+const inspectionSummary=document.getElementById("inspectionSummary");
+const decisionEl=document.getElementById("decision");
+const assessmentEl=document.getElementById("assessment");
+const remarksEl=document.getElementById("remarks");
+const recordList=document.getElementById("recordList");
+const recordCount=document.getElementById("recordCount");
+
 
 ort.env.wasm.wasmPaths=
   "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
@@ -119,6 +131,8 @@ startBtn.onclick=async()=>{
 
   candidate=null;
   stableCount=0;
+  stableFinding=null;
+  captureBtn.disabled=true;
 
   statusEl.textContent=
    `Scanning — ${INPUT}×${INPUT}`;
@@ -172,6 +186,8 @@ function stopCamera(){
 
  candidate=null;
  stableCount=0;
+ stableFinding=null;
+ captureBtn.disabled=true;
 }
 
 
@@ -720,6 +736,8 @@ function drawStable(a){
 
   candidate=null;
   stableCount=0;
+  stableFinding=null;
+  captureBtn.disabled=true;
 
   resultEl.textContent=
    "No supported component detected — move closer if needed.";
@@ -753,6 +771,8 @@ function drawStable(a){
   stableCount<
   REQUIRED_STABLE_FRAMES
  ){
+  stableFinding=null;
+  captureBtn.disabled=true;
 
   resultEl.textContent=
    `Checking… ${stableCount}/${REQUIRED_STABLE_FRAMES}`;
@@ -763,6 +783,13 @@ function drawStable(a){
 
  const info=
   getDisplayInfo(z);
+ stableFinding={
+  label:z.label,
+  component:info.title,
+  aiSuggestion:(z.label==="AIR_FILTER_CLEAN"||z.label==="AIR_FILTER_DIRTY")?info.condition:"Identification only",
+  confidence:z.conf
+ };
+ captureBtn.disabled=false;
 
 
  // ------------------------------------------------
@@ -876,3 +903,93 @@ function drawStable(a){
   );
  }
 }
+
+
+// --------------------------------------------------
+// V6.3 TECHNICIAN REVIEW AND SESSION-ONLY RECORDS
+// --------------------------------------------------
+function assessmentOptions(label){
+ if(label==="AIR_FILTER_CLEAN"||label==="AIR_FILTER_DIRTY")
+  return ["CLEAN","DIRTY","Unable to determine"];
+ if(label==="BRAKE_PAD")
+  return ["Serviceable (visually)","Worn / suspect","Requires measurement","Unable to determine"];
+ return ["Serviceable (visually)","Worn / suspect","Requires further testing","Unable to determine"];
+}
+function setAssessmentOptions(finding){
+ assessmentEl.replaceChildren();
+ for(const value of assessmentOptions(finding.label)){
+  const option=document.createElement("option");
+  option.value=value;option.textContent=value;
+  assessmentEl.appendChild(option);
+ }
+ if(finding.label==="AIR_FILTER_CLEAN"||finding.label==="AIR_FILTER_DIRTY")
+  assessmentEl.value=finding.aiSuggestion;
+ else assessmentEl.value="Unable to determine";
+}
+captureBtn.onclick=()=>{
+ if(!stableFinding)return;
+ capturedFinding={...stableFinding, capturedAt:new Date().toISOString()};
+ inspectionSummary.textContent=
+  capturedFinding.component+" — AI: "+capturedFinding.aiSuggestion+
+  " ("+(capturedFinding.confidence*100).toFixed(1)+"% confidence)";
+ decisionEl.value="confirm";
+ remarksEl.value="";
+ setAssessmentOptions(capturedFinding);
+ updateDecision();
+ inspectionPanel.hidden=false;
+ inspectionPanel.scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+function updateDecision(){
+ const isAir=capturedFinding && capturedFinding.label.startsWith("AIR_FILTER_");
+ const isOverride=decisionEl.value==="override";
+ assessmentEl.disabled=decisionEl.value==="review" || (!isOverride && isAir);
+ if(decisionEl.value==="review") assessmentEl.value="Unable to determine";
+ if(decisionEl.value==="confirm" && isAir) assessmentEl.value=capturedFinding.aiSuggestion;
+}
+decisionEl.onchange=()=>{
+ if(capturedFinding)setAssessmentOptions(capturedFinding);
+ updateDecision();
+};
+document.getElementById("cancelFindingBtn").onclick=()=>{
+ capturedFinding=null;inspectionPanel.hidden=true;
+};
+document.getElementById("saveFindingBtn").onclick=()=>{
+ if(!capturedFinding)return;
+ const isAir=capturedFinding.label.startsWith("AIR_FILTER_");
+ const decision=decisionEl.value;
+ const assessment=decision==="review"?"Further inspection required":
+  (decision==="confirm"&&!isAir?"Component identification confirmed":assessmentEl.value);
+ if(decision==="override" && assessment==="Unable to determine" && !remarksEl.value.trim()){
+  alert("Add a remark explaining why the AI finding was overridden.");return;
+ }
+ if(decision==="override" && isAir && assessment===capturedFinding.aiSuggestion){
+  alert("Choose a different assessment for an override.");return;
+ }
+ inspectionRecords.push({
+  ...capturedFinding,
+  decision,
+  technicianAssessment:assessment,
+  remarks:remarksEl.value.trim(),
+  savedAt:new Date().toISOString()
+ });
+ capturedFinding=null;inspectionPanel.hidden=true;
+ renderRecords();
+};
+function renderRecords(){
+ recordList.replaceChildren();
+ recordCount.textContent=String(inspectionRecords.length);
+ for(const r of inspectionRecords){
+  const li=document.createElement("li");
+  li.textContent=r.component+" | AI: "+r.aiSuggestion+
+   " | Technician: "+r.technicianAssessment+
+   " | "+r.decision+
+   (r.remarks?" | "+r.remarks:"");
+  recordList.appendChild(li);
+ }
+}
+document.getElementById("clearRecordsBtn").onclick=()=>{
+ if(inspectionRecords.length && confirm("Clear all records from this inspection?")){
+  inspectionRecords.length=0;renderRecords();
+ }
+};
+renderRecords();
