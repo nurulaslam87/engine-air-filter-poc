@@ -215,6 +215,7 @@ startBtn.onclick=async()=>{
 // --------------------------------------------------
 
 function stopCamera(){
+ if(typeof updateAiGuidance==="function")updateAiGuidance(null);
 
  running=false;
 
@@ -753,6 +754,19 @@ function getDisplayInfo(z){
 // STABLE DETECTION + DISPLAY
 // --------------------------------------------------
 
+const aiGuidanceText=document.getElementById("aiGuidanceText");
+const DETECTION_GUIDANCE={
+ AIR_FILTER_CLEAN:"Engine air filter detected. The model suggests clean, but verify the filter visually using the manufacturer's procedure. Check for dust, damage and correct seating before recording.",
+ AIR_FILTER_DIRTY:"Engine air filter detected. The model suggests dirty, but verify visually before deciding whether servicing or replacement is required.",
+ BRAKE_PAD:"Brake pad detected (identification only). Measure friction material thickness with suitable equipment and compare with the manufacturer's minimum specification. Do not judge thickness from this image.",
+ SPARK_PLUG:"Spark plug detected (identification only). With the engine safely off and cool, follow the manufacturer's removal and inspection procedure. Do not diagnose condition from detection alone."
+};
+function updateAiGuidance(label){
+ if(!aiGuidanceText)return;
+ aiGuidanceText.textContent=label&&DETECTION_GUIDANCE[label]
+  ?DETECTION_GUIDANCE[label]
+  :"No stable supported component detected. Aim at an engine air filter, brake pad or spark plug. Detection boxes appear only when the model identifies a component.";
+}
 function drawStable(a){
 
  const r=
@@ -790,6 +804,7 @@ function drawStable(a){
 
  // NOTHING DETECTED
  if(!a.length){
+  updateAiGuidance(null);
 
   candidate=null;
   stableCount=0;
@@ -830,6 +845,7 @@ function drawStable(a){
  ){
   stableFinding=null;
   captureBtn.disabled=true;
+  updateAiGuidance(null);
 
   resultEl.textContent=
    `Checking… ${stableCount}/${REQUIRED_STABLE_FRAMES}`;
@@ -840,6 +856,7 @@ function drawStable(a){
 
  const info=
   getDisplayInfo(z);
+ updateAiGuidance(z.label);
  stableFinding={
   label:z.label,
   component:info.title,
@@ -1429,39 +1446,3 @@ document.getElementById("arRecord").onclick=()=>{
 renderArConditions();
 updateArGuide();
 showMode("manual");
-
-/* V7.2 technician-positioned 2D guide marker; no AI localization claims. */
-const arFrame=document.getElementById("arCameraFrame");
-const arPointer=document.getElementById("arPointer");
-const arPointerEnabled=document.getElementById("arPointerEnabled");
-const arPointerReset=document.getElementById("arPointerReset");
-let pointerPosition={x:50,y:43};
-function setArPointer(x,y){
- pointerPosition={x:Math.max(12,Math.min(88,x)),y:Math.max(13,Math.min(65,y))};
- arPointer.style.left=pointerPosition.x+"%";
- arPointer.style.top=pointerPosition.y+"%";
-}
-function pointFromEvent(e){
- const rect=arFrame.getBoundingClientRect();
- if(!rect.width||!rect.height)return;
- setArPointer((e.clientX-rect.left)/rect.width*100,(e.clientY-rect.top)/rect.height*100);
-}
-let activePointerId=null;
-arFrame.addEventListener("pointerdown",e=>{
- if(!arPointerEnabled.checked||e.target.closest("#arOverlay"))return;
- activePointerId=e.pointerId;
- pointFromEvent(e);
- try{arFrame.setPointerCapture(e.pointerId);}catch(_){}
-});
-arFrame.addEventListener("pointermove",e=>{
- if(activePointerId!==e.pointerId)return;
- pointFromEvent(e);
-});
-function finishPointer(e){
- if(activePointerId===e.pointerId)activePointerId=null;
-}
-arFrame.addEventListener("pointerup",finishPointer);
-arFrame.addEventListener("pointercancel",finishPointer);
-arPointerEnabled.onchange=()=>{arPointer.hidden=!arPointerEnabled.checked;};
-arPointerReset.onclick=()=>setArPointer(50,43);
-setArPointer(50,43);
