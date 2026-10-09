@@ -761,7 +761,9 @@ const DETECTION_GUIDANCE={
  BRAKE_PAD:"Brake pad detected (identification only). Measure friction material thickness with suitable equipment and compare with the manufacturer's minimum specification. Do not judge thickness from this image.",
  SPARK_PLUG:"Spark plug detected (identification only). With the engine safely off and cool, follow the manufacturer's removal and inspection procedure. Do not diagnose condition from detection alone."
 };
+const aiDetectionSummary=document.getElementById("aiDetectionSummary");
 function updateAiGuidance(label){
+ if(aiDetectionSummary)aiDetectionSummary.textContent=label&&DETECTION_GUIDANCE[label]?"AI detected: "+getDisplayInfo({label}).title+" · technician verification required":"No stable AI detection yet";
  if(!aiGuidanceText)return;
  aiGuidanceText.textContent=label&&DETECTION_GUIDANCE[label]
   ?DETECTION_GUIDANCE[label]
@@ -931,50 +933,24 @@ function drawStable(a){
   const h=
    (det.y2-det.y1)*sc;
 
-  const label=
-   `${detInfo.boxLabel} `+
-   `${(det.conf*100).toFixed(0)}%`;
-
-
-  ctx.strokeStyle=
-   "#00ff66";
-
-  ctx.lineWidth=4;
-
-  ctx.strokeRect(
-   x,
-   y,
-   w,
-   h
-  );
-
-
-  ctx.font=
-   "bold 18px Arial";
-
-  const tw=
-   ctx.measureText(
-    label
-   ).width;
-
-  ctx.fillStyle=
-   "rgba(0,0,0,.75)";
-
-  ctx.fillRect(
-   x,
-   Math.max(0,y-28),
-   tw+14,
-   28
-  );
-
-  ctx.fillStyle=
-   "#fff";
-
-  ctx.fillText(
-   label,
-   x+7,
-   Math.max(20,y-7)
-  );
+  const label=detInfo.title.toUpperCase()+" · "+(det.conf*100).toFixed(0)+"%";
+  const left=Math.max(2,Math.min(r.width-2,x));
+  const top=Math.max(2,Math.min(r.height-2,y));
+  const right=Math.max(left,Math.min(r.width-2,x+w));
+  const bottom=Math.max(top,Math.min(r.height-2,y+h));
+  ctx.strokeStyle=det===z?"#3bf6a1":"#fbbf24";
+  ctx.lineWidth=det===z?3:2;
+  ctx.strokeRect(left,top,right-left,bottom-top);
+  ctx.font="bold 12px Arial";
+  const pad=8;
+  const maxWidth=Math.max(20,r.width-8);
+  const labelWidth=Math.min(maxWidth,ctx.measureText(label).width+pad*2);
+  const labelX=Math.max(4,Math.min(r.width-labelWidth-4,left));
+  const labelY=top>=28?top-26:Math.min(r.height-26,bottom+3);
+  ctx.fillStyle="rgba(9,23,20,.92)";
+  ctx.fillRect(labelX,labelY,labelWidth,24);
+  ctx.fillStyle="#b5f5d0";
+  ctx.fillText(label,labelX+pad,labelY+16,labelWidth-pad*2);
  }
 }
 
