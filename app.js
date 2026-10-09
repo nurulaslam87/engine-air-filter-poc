@@ -1429,3 +1429,39 @@ document.getElementById("arRecord").onclick=()=>{
 renderArConditions();
 updateArGuide();
 showMode("manual");
+
+/* V7.2 technician-positioned 2D guide marker; no AI localization claims. */
+const arFrame=document.getElementById("arCameraFrame");
+const arPointer=document.getElementById("arPointer");
+const arPointerEnabled=document.getElementById("arPointerEnabled");
+const arPointerReset=document.getElementById("arPointerReset");
+let pointerPosition={x:50,y:43};
+function setArPointer(x,y){
+ pointerPosition={x:Math.max(12,Math.min(88,x)),y:Math.max(13,Math.min(65,y))};
+ arPointer.style.left=pointerPosition.x+"%";
+ arPointer.style.top=pointerPosition.y+"%";
+}
+function pointFromEvent(e){
+ const rect=arFrame.getBoundingClientRect();
+ if(!rect.width||!rect.height)return;
+ setArPointer((e.clientX-rect.left)/rect.width*100,(e.clientY-rect.top)/rect.height*100);
+}
+let activePointerId=null;
+arFrame.addEventListener("pointerdown",e=>{
+ if(!arPointerEnabled.checked||e.target.closest("#arOverlay"))return;
+ activePointerId=e.pointerId;
+ pointFromEvent(e);
+ try{arFrame.setPointerCapture(e.pointerId);}catch(_){}
+});
+arFrame.addEventListener("pointermove",e=>{
+ if(activePointerId!==e.pointerId)return;
+ pointFromEvent(e);
+});
+function finishPointer(e){
+ if(activePointerId===e.pointerId)activePointerId=null;
+}
+arFrame.addEventListener("pointerup",finishPointer);
+arFrame.addEventListener("pointercancel",finishPointer);
+arPointerEnabled.onchange=()=>{arPointer.hidden=!arPointerEnabled.checked;};
+arPointerReset.onclick=()=>setArPointer(50,43);
+setArPointer(50,43);
