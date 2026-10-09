@@ -237,6 +237,32 @@ footer{
 .manualConditions{display:grid;gap:7px;margin:8px 0 12px}
 .manualConditions label{display:flex;align-items:flex-start;gap:9px;background:#0d1117;border-radius:7px;padding:10px;font-size:13px}
 .manualConditions input{width:auto!important;margin:0!important}
+/* V6.9 focused mobile workflow */
+[hidden]{display:none!important}
+header{height:auto;min-height:78px}
+#panel{padding:12px 12px 24px}
+#vehiclePanel,#manualPanel,#checklistPanel,#recordsPanel,#aiModePanel{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:16px;margin-top:12px}
+.modeTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:14px}
+.modeTab{font-size:12px;line-height:1.3;padding:12px 5px;background:#212b37;color:#b7c0cc;font-weight:700;border:1px solid #364253;min-height:56px}
+.modeTab.selected{background:#153e2b;color:#a7f3d0;border-color:#238636}
+.sectionHeading{font-size:17px;font-weight:800;margin:0 0 7px}
+#manualPanel .manualHint{margin:0 0 12px}
+#manualPanel .fieldLabel{font-size:13px;margin:12px 0 5px}
+#manualPanel .manualConditions{grid-template-columns:1fr 1fr;gap:7px}
+#manualPanel .manualConditions label{min-height:55px;align-items:center;line-height:1.35;border:1px solid #30363d}
+#manualPanel .manualConditions label:has(input:checked){border-color:#238636;background:#123a27}
+#manualPanel .manualConditions input{accent-color:#34d399;min-width:18px;min-height:18px}
+.optionalHeading{display:none}
+.secondaryAction{background:#263244;color:#cbd5e1;font-size:13px;padding:11px;margin:8px 0 12px}
+#manualSavedMessage{color:#86efac;font-size:13px;min-height:18px;margin-top:10px}
+#checklistItems{max-height:360px;overflow:auto}
+#viewer{height:min(48vh,420px);border-radius:12px;margin:12px 0}
+#aiModePanel #resultCard{margin-top:12px}
+#aiModePanel #startBtn{margin-bottom:8px}
+#aiModePanel #supported{margin-top:18px}
+#aiModePanel #status{margin:10px 0}
+#recordsPanel #recordList{max-height:420px;overflow:auto}
+@media(max-width:370px){#manualPanel .manualConditions{grid-template-columns:1fr}.modeTab{font-size:11px}}
 </style>
 </head>
 
@@ -333,30 +359,44 @@ footer{
   <button id="cancelFindingBtn" type="button">Cancel</button>
  </div>
 </section>
-<section id="manualPanel" aria-label="Manual basic servicing inspection">
- <div class="resultTitle">Basic servicing — manual inspection</div>
- <p class="manualHint">No camera required. Select the observed condition; record measurements and remarks when relevant.</p>
+<nav id="modeTabs" class="modeTabs" aria-label="Inspection mode">
+ <button type="button" data-mode="manual" class="modeTab selected" aria-pressed="true">☑ Service Checklist</button>
+ <button type="button" data-mode="ai" class="modeTab" aria-pressed="false">◎ AI Camera</button>
+ <button type="button" data-mode="results" class="modeTab" aria-pressed="false">▤ Results & PDF</button>
+</nav>
+<section id="aiModePanel" class="modePage" hidden>
+ <div class="sectionHeading">AI-assisted inspection</div>
+ <p class="manualHint">Use the camera to identify supported components. Confirm each AI suggestion before saving.</p>
+</section>
+<section id="manualPanel" class="modePage" aria-label="Manual basic servicing inspection">
+ <div class="sectionHeading">Routine servicing</div>
+ <p class="manualHint">Choose an item, record what you see, then save. No camera needed.</p>
  <form id="manualForm">
   <label class="fieldLabel" for="manualComponent">Inspection item</label>
   <select id="manualComponent" required></select>
-  <label class="fieldLabel" for="manualLocation">Location (if applicable)</label>
-  <select id="manualLocation"><option value="">Not location-specific</option><option>Front left</option><option>Front right</option><option>Rear left</option><option>Rear right</option></select>
-  <div class="fieldLabel">Observed condition(s)</div>
+   <div class="fieldLabel">Observed condition(s)</div>
   <div id="manualConditions" class="manualConditions"></div>
+ <div class="optionalHeading">Additional details (optional)</div>
+ <div id="manualExtras" hidden>
+ <label class="fieldLabel" for="manualLocation">Location (if applicable)</label>
+  <select id="manualLocation"><option value="">Not location-specific</option><option>Front left</option><option>Front right</option><option>Rear left</option><option>Rear right</option></select>
   <label class="fieldLabel" for="manualMeasurement">Measurement (optional)</label>
   <input id="manualMeasurement" maxlength="100" placeholder="e.g. 3.5 mm, 220 kPa, 12.6 V">
   <label class="fieldLabel" for="manualRemarks">Technician remarks / recommended action (optional)</label>
   <textarea id="manualRemarks" maxlength="600" placeholder="Additional observations or follow-up action"></textarea>
-  <button type="submit" id="saveManualBtn">Save Manual Finding</button>
+  </div>
+ <button type="button" id="manualExtrasBtn" class="secondaryAction" aria-expanded="false">+ Add location, measurement or remarks</button>
+ <button type="submit" id="saveManualBtn">Save Inspection Finding</button>
+ <div id="manualSavedMessage" role="status" aria-live="polite"></div>
  </form>
 </section>
 <section id="checklistPanel" aria-label="Vehicle inspection checklist">
- <div class="resultTitle">Vehicle inspection checklist</div>
+ <div class="sectionHeading">Inspection progress</div>
  <div id="checklistProgress" class="checklistProgress">Select a vehicle to view inspection progress.</div>
  <div id="checklistItems"></div>
  <div class="checklistNote">Status is based on saved technician-reviewed findings. AI identification alone does not complete an inspection.</div>
 </section>
-<section id="recordsPanel">
+<section id="recordsPanel" class="modePage" hidden>
  <div class="resultTitle">Findings for selected vehicle (<span id="recordCount">0</span>)</div>
  <div id="storageStatus" style="font-size:11px;color:#9da7b3;margin:8px 0"></div>
  <ol id="recordList"></ol>
@@ -409,7 +449,7 @@ footer{
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=68"></script>
+<script src="./app.js?v=69"></script>
 
 </body>
 </html>

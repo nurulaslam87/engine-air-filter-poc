@@ -1283,5 +1283,33 @@ manualForm.onsubmit=e=>{
  if(!storeSessions(sessions,next,activeId))return;
  inspectionRecords=next;
  manualForm.reset();renderManualOptions();renderVehicles();
- alert("Manual finding saved for "+activeSession().registration+".");
+ document.getElementById("manualSavedMessage").textContent="Saved to "+activeSession().registration+".";
 };
+
+const aiPage=document.getElementById("aiModePanel");
+for(const name of ["viewer","status","resultCard","startBtn","captureBtn","inspectionPanel","supported"]){
+ const el=document.getElementById(name);
+ if(el)aiPage.appendChild(el);
+}
+const tabs=document.getElementById("modeTabs");
+const extras=document.getElementById("manualExtras");
+const extrasBtn=document.getElementById("manualExtrasBtn");
+extrasBtn.onclick=()=>{
+ extras.hidden=!extras.hidden;
+ extrasBtn.setAttribute("aria-expanded",String(!extras.hidden));
+ extrasBtn.textContent=extras.hidden?"+ Add location, measurement or remarks":"Hide additional details";
+};
+function showMode(mode){
+ if(capturedFinding&&mode!=="ai"){alert("Complete the AI review first.");return;}
+ document.getElementById("manualPanel").hidden=mode!=="manual";
+ document.getElementById("checklistPanel").hidden=mode!=="manual";
+ aiPage.hidden=mode!=="ai";
+ document.getElementById("recordsPanel").hidden=mode!=="results";
+ for(const b of tabs.querySelectorAll("button")){
+  const active=b.dataset.mode===mode;
+  b.classList.toggle("selected",active);
+  b.setAttribute("aria-pressed",String(active));
+ }
+}
+for(const b of tabs.querySelectorAll("button"))b.onclick=()=>showMode(b.dataset.mode);
+showMode("manual");
