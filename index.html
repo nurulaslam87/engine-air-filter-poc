@@ -176,6 +176,23 @@ footer{
   color:#6e7681;
   font-size:9px;
 }
+
+/* V6.3 inspection workflow */
+#captureBtn{margin-top:8px;background:#2563eb}
+#captureBtn:disabled{background:#30363d;color:#8b949e}
+#inspectionPanel,#recordsPanel{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-top:10px}
+#inspectionPanel[hidden]{display:none}
+.fieldLabel{display:block;font-size:12px;color:#aeb8c6;margin:9px 0 5px}
+#inspectionPanel select,#inspectionPanel textarea{width:100%;background:#0d1117;color:white;border:1px solid #465161;border-radius:8px;padding:11px;font-size:15px}
+#inspectionPanel textarea{min-height:62px;resize:vertical}
+#inspectionPanel .actions{display:flex;gap:8px;margin-top:10px}
+#saveFindingBtn{background:#238636}
+#cancelFindingBtn{background:#374151}
+#inspectionPanel .actions button{font-size:14px}
+#inspectionSummary{font-size:14px;line-height:1.5}
+#recordList{padding-left:20px;font-size:13px;line-height:1.5}
+#recordList li{margin-bottom:8px;overflow-wrap:anywhere}
+#clearRecordsBtn{background:#374151;font-size:12px;padding:9px}
 </style>
 </head>
 
@@ -232,7 +249,32 @@ footer{
   </button>
 
 
-  <div id="supported">
+  
+<button id="captureBtn" disabled type="button">Capture AI Finding</button>
+<section id="inspectionPanel" hidden>
+ <div class="resultTitle">Technician review</div>
+ <div id="inspectionSummary"></div>
+ <label class="fieldLabel" for="decision">Decision</label>
+ <select id="decision">
+  <option value="confirm">Confirm AI suggestion / identification</option>
+  <option value="override">Override / correct finding</option>
+  <option value="review">Further inspection required</option>
+ </select>
+ <label class="fieldLabel" for="assessment">Technician assessment</label>
+ <select id="assessment"></select>
+ <label class="fieldLabel" for="remarks">Remarks (optional)</label>
+ <textarea id="remarks" placeholder="Enter your observations"></textarea>
+ <div class="actions">
+  <button id="saveFindingBtn" type="button">Save Finding</button>
+  <button id="cancelFindingBtn" type="button">Cancel</button>
+ </div>
+</section>
+<section id="recordsPanel">
+ <div class="resultTitle">Current inspection records (<span id="recordCount">0</span>)</div>
+ <ol id="recordList"></ol>
+ <button id="clearRecordsBtn" type="button">Clear Records</button>
+</section>
+<div id="supported">
 
     <div class="supportedTitle">
       Supported Inspections
@@ -268,7 +310,7 @@ footer{
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=62"></script>
+<script src="./app.js?v=63"></script>
 
 </body>
 </html>
