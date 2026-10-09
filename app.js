@@ -1304,6 +1304,8 @@ function showMode(mode){
  document.getElementById("manualPanel").hidden=mode!=="manual";
  document.getElementById("checklistPanel").hidden=mode!=="manual";
  aiPage.hidden=mode!=="ai";
+ document.getElementById("arGuidePanel").hidden=mode!=="ar";
+ if(mode!=="ar")stopArCamera();
  document.getElementById("recordsPanel").hidden=mode!=="results";
  for(const b of tabs.querySelectorAll("button")){
   const active=b.dataset.mode===mode;
@@ -1313,3 +1315,65 @@ function showMode(mode){
 }
 for(const b of tabs.querySelectorAll("button"))b.onclick=()=>showMode(b.dataset.mode);
 showMode("manual");
+
+/* V7.0 guided servicing: informational 2D camera overlay, not spatial AR. */
+const AR_GUIDES={
+ "Engine Oil Level":["Park on level ground, secure the vehicle, and follow the manufacturer procedure for engine temperature and waiting time.","Locate the dipstick using the vehicle manual. Keep clear of hot or moving parts.","Remove and wipe the dipstick, reinsert fully, then remove and read the level against MIN and MAX marks.","Record the observed level. Do not assume a reading from the camera image."],
+ "Coolant Level":["Allow the engine to cool fully. Never open a hot pressurised cooling system.","Locate the correct coolant expansion tank using the vehicle manual.","Observe the level against the marked range without opening a hot cap.","Record the level and any visible contamination."],
+ "Brake Fluid Level":["Park safely and consult the manufacturer procedure.","Locate the brake fluid reservoir; avoid introducing contamination.","Inspect the level against reservoir markings without assuming the reason for a low level.","Record the observation. Investigate low level, leaks, or brake wear before deciding action."],
+ "Tyre Tread":["Secure the vehicle and identify the tyre location.","Inspect the tread across its width for uneven wear and damage.","Use a suitable tread-depth gauge; compare measurements with applicable limits.","Record tread condition, location, and measured depth."],
+ "Tyre Condition":["Identify the tyre location and inspect only when safe.","Look for cuts, bulges, cracking, embedded objects, and uneven wear.","Do not remove embedded objects or attempt repairs based only on appearance.","Record every observed defect and tyre location."],
+ "Tyre Pressure":["Find the vehicle manufacturer's specified cold tyre pressure.","Measure with a suitable tyre pressure gauge when tyres are cold.","Compare the measured pressure with the vehicle specification, not the sidewall maximum.","Record pressure, units, and tyre location."],
+ "Battery Visual Condition":["Turn off ignition and electrical loads before visual inspection.","Look for casing damage, loose terminals, corrosion, or leaks without touching exposed conductors.","Avoid shorting terminals; follow battery and vehicle-specific safety procedures.","Record visual findings. Voltage or health requires suitable test equipment."],
+ "Exterior Lights":["Secure the vehicle and activate the relevant light function.","Check operation of headlights, indicators, brake lights and other required lamps.","Note non-operating, intermittent, or damaged lights; obtain assistance where necessary.","Record the specific light and observed fault."],
+ "Wiper Blades":["Ensure the windscreen is clear and wet before operating wipers.","Inspect rubber for splits, hardening or damage.","Operate wipers safely and observe streaking or poor clearing.","Record blade condition and affected side."],
+ "Drive Belt Visual Condition":["Switch off engine and secure against accidental starting. Keep hands away from moving parts.","Locate the accessory drive belt using the vehicle manual.","Visually check for cracking, fraying, glazing and obvious damage; do not touch moving belts.","Record observations. Belt tension requires the correct specified method."],
+ "Visible Fluid Leaks":["Secure the vehicle and avoid hot surfaces or moving components.","Look for fresh drips, wet areas or stains from a safe viewing position.","Do not identify fluid type solely from colour; avoid contact with unknown fluids.","Record location, seepage or active leakage and arrange follow-up inspection."],
+ "Engine Oil Appearance":["Follow the vehicle manufacturer's safe oil inspection procedure.","Inspect a suitable oil sample or dipstick under adequate lighting.","Note discolouration, milky appearance or visible contamination without inferring serviceability from colour alone.","Record observed appearance and any follow-up required."],
+ "Coolant Appearance":["Ensure the cooling system is cool; never open a hot pressure cap.","Observe coolant through the reservoir where visible.","Note unusual discolouration, oil mixing or contamination without opening a hot system.","Record the observation and arrange further checks if needed."]
+};
+const arTask=document.getElementById("arTask");
+const arVideo=document.getElementById("arVideo");
+let arStream=null;
+let arStep=0;
+for(const item of manualChecklistItems()){
+ const opt=document.createElement("option");opt.value=item;opt.textContent=item;arTask.appendChild(opt);
+}
+function updateArGuide(){
+ const steps=AR_GUIDES[arTask.value]||["Refer to the manufacturer's inspection procedure.","Record the observed condition."];
+ arStep=Math.max(0,Math.min(arStep,steps.length-1));
+ document.getElementById("arStepCount").textContent=arTask.value+" • Step "+(arStep+1)+" of "+steps.length;
+ document.getElementById("arStepText").textContent=steps[arStep];
+ document.getElementById("arPrevious").disabled=arStep===0;
+ document.getElementById("arNext").disabled=arStep===steps.length-1;
+}
+function stopArCamera(){
+ if(arStream){arStream.getTracks().forEach(track=>track.stop());arStream=null;}
+ arVideo.srcObject=null;
+ document.getElementById("arCameraBtn").textContent="Start AR Camera";
+ document.getElementById("arCameraStatus").textContent="Camera off";
+}
+arTask.onchange=()=>{arStep=0;updateArGuide();};
+document.getElementById("arPrevious").onclick=()=>{arStep--;updateArGuide();};
+document.getElementById("arNext").onclick=()=>{arStep++;updateArGuide();};
+document.getElementById("arCameraBtn").onclick=async()=>{
+ if(arStream){stopArCamera();return;}
+ if(running){alert("Stop the AI camera before starting the AR guide.");return;}
+ try{
+  arStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+  arVideo.srcObject=arStream;await arVideo.play();
+  document.getElementById("arCameraBtn").textContent="Stop AR Camera";
+  document.getElementById("arCameraStatus").textContent="Live camera — instructions are informational overlays";
+ }catch(e){
+  stopArCamera();
+  document.getElementById("arCameraStatus").textContent="Camera unavailable: "+(e.message||"Permission denied");
+ }
+};
+document.getElementById("arRecord").onclick=()=>{
+ if(!activeSession()){alert("Create or select a vehicle inspection first.");return;}
+ manualComponent.value=arTask.value;
+ renderManualOptions();
+ showMode("manual");
+ document.getElementById("manualPanel").scrollIntoView({behavior:"smooth",block:"start"});
+};
+updateArGuide();
