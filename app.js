@@ -1423,57 +1423,152 @@ renderArConditions();
 updateArGuide();
 showMode("manual");
 
-/* V7.5: optional, user-initiated browser speech commands. */
+/* V7.6: user-enabled hands-free commands. Browsers may interrupt recognition. */
 const voiceBtn=document.getElementById("voiceCommandBtn");
 const voiceStatus=document.getElementById("voiceCommandStatus");
 const SpeechAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let voiceRecognizer=null;
+let handsFreeEnabled=false;
+let voiceStarting=false;
+let voiceRetryCount=0;
+let voiceRetryTimer=null;
+const MAX_VOICE_RETRIES=4;
+function voiceUi(message){
+ voiceBtn.textContent=handsFreeEnabled?"🔴 Stop Listening":"🎤 Start Hands-Free Listening";
+ if(message)voiceStatus.textContent=message;
+}
+function stopHandsFree(message){
+ handsFreeEnabled=false;
+ clearTimeout(voiceRetryTimer);
+ voiceRetryTimer=null;
+ voiceRetryCount=0;
+ const previous=voiceRecognizer;
+ voiceRecognizer=null;
+ voiceStarting=false;
+ if(previous){try{previous.abort();}catch(_){}}
+ voiceUi(message||"Microphone off. Tap Start Hands-Free Listening to resume.");
+}
+function scheduleVoiceRestart(){
+ if(!handsFreeEnabled||voiceRetryTimer||document.hidden)return;
+ if(voiceRetryCount>=MAX_VOICE_RETRIES){
+  stopHandsFree("Speech recognition repeatedly stopped. Tap Start Hands-Free Listening to retry.");
+  return;
+ }
+ voiceRetryTimer=setTimeout(()=>{
+  voiceRetryTimer=null;
+  if(handsFreeEnabled)startVoiceCycle();
+ },Math.min(800+voiceRetryCount*700,3000));
+}
+function handleVoiceCommand(raw){
+ const phrase=raw.toLowerCase().trim().replace(/[.!?]/g,"");
+ voiceStatus.textContent="Heard: "+phrase;
+ if(/\\b(stop listening|microphone off|disable voice)\\b/.test(phrase)){
+  stopHandsFree("Hands-free listening stopped by voice command.");
+ }else if(phrase.includes("start camera")){
+  showMode("ai");
+  if(!running&&!startBtn.disabled)startBtn.click();
+  else if(startBtn.disabled)voiceStatus.textContent="AI model is not ready.";
+ }else if(phrase.includes("stop camera")){
+  if(running)startBtn.click();
+  if(arStream)stopArCamera();
+ }else if(phrase.includes("capture finding")){
+  showMode("ai");
+  if(!captureBtn.disabled)captureBtn.click();
+  else voiceStatus.textContent="No stable AI detection to capture.";
+ }else if(phrase.includes("next step")){
+  showMode("ar");
+  const next=document.getElementById("arNext");
+  if(!next.disabled)next.click();
+  else voiceStatus.textContent="Already at the final step.";
+ }else if(phrase.includes("previous step")||phrase.includes("back step")){
+  showMode("ar");
+  const previous=document.getElementById("arPrevious");
+  if(!previous.disabled)previous.click();
+  else voiceStatus.textContent="Already at the first step.";
+ }else if(phrase.includes("repeat step")){
+  showMode("ar");
+  voiceStatus.textContent="Current step: "+document.getElementById("arStepText").textContent;
+ }else if(phrase.includes("ar guide")){
+  showMode("ar");
+ }else if(phrase.includes("ai camera")){
+  showMode("ai");
+ }else if(phrase.includes("service checklist")){
+  showMode("manual");
+ }else if(phrase.includes("results")){
+  showMode("results");
+ }else if(phrase.includes("save finding")){
+  voiceStatus.textContent="Review the technician assessment and tap Save Finding to confirm.";
+ }else{
+  voiceStatus.textContent="Command not recognised: "+phrase;
+ }
+}
+function startVoiceCycle(){
+ if(!handsFreeEnabled||voiceRecognizer||voiceStarting||document.hidden)return;
+ voiceStarting=true;
+ const recognition=new SpeechAPI();
+ voiceRecognizer=recognition;
+ recognition.lang="en-SG";
+ recognition.continuous=true;
+ recognition.interimResults=false;
+ recognition.onstart=()=>{
+  voiceStarting=false;
+  voiceRetryCount=0;
+  voiceUi("Listening continuously while this page is active. Say 'next step' or 'stop listening'.");
+ };
+ recognition.onresult=event=>{
+  for(let i=event.resultIndex;i<event.results.length;i++){
+   if(event.results[i].isFinal){
+    const transcript=event.results[i][0].transcript||"";
+    handleVoiceCommand(transcript);
+    if(!handsFreeEnabled)break;
+   }
+  }
+ };
+ recognition.onerror=e=>{
+  voiceStatus.textContent="Microphone: "+e.error;
+  if(["not-allowed","service-not-allowed","audio-capture"].includes(e.error)){
+   stopHandsFree("Microphone unavailable ("+e.error+"). Check permission or use buttons.");
+  }else{
+   voiceRetryCount++;
+  }
+ };
+ recognition.onend=()=>{
+  if(voiceRecognizer===recognition)voiceRecognizer=null;
+  voiceStarting=false;
+  if(handsFreeEnabled)scheduleVoiceRestart();
+ };
+ try{recognition.start();}
+ catch(e){
+  voiceRecognizer=null;
+  voiceStarting=false;
+  voiceRetryCount++;
+  voiceStatus.textContent="Voice could not start: "+e.message;
+  scheduleVoiceRestart();
+ }
+}
 if(!SpeechAPI){
  voiceBtn.disabled=true;
- voiceStatus.textContent="Voice recognition is not supported by this browser. Use the existing buttons.";
+ voiceStatus.textContent="Continuous speech recognition is unavailable in this browser. Use the existing buttons.";
 }else{
  voiceBtn.onclick=()=>{
-  if(voiceRecognizer){voiceRecognizer.stop();return;}
-  const recognition=new SpeechAPI();
-  voiceRecognizer=recognition;
-  recognition.lang="en-SG";
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  voiceBtn.textContent="Listening… tap to stop";
-  voiceStatus.textContent="Listening for one command.";
-  recognition.onresult=event=>{
-   const phrase=(event.results[0][0].transcript||"").toLowerCase().trim().replace(/[.!?]/g,"");
-   voiceStatus.textContent="Heard: "+phrase;
-   if(phrase.includes("start camera")){
-    showMode("ai");if(!running&&!startBtn.disabled)startBtn.click();
-    else if(startBtn.disabled)voiceStatus.textContent="AI model is not ready.";
-   }else if(phrase.includes("stop camera")){
-    if(running)startBtn.click();
-    if(arStream)stopArCamera();
-   }else if(phrase.includes("capture finding")){
-    showMode("ai");
-    if(!captureBtn.disabled)captureBtn.click();
-    else voiceStatus.textContent="No stable detection to capture. Point the camera at a supported component.";
-   }else if(phrase.includes("next step")){
-    showMode("ar");document.getElementById("arNext").click();
-   }else if(phrase.includes("previous step")||phrase.includes("back step")){
-    showMode("ar");document.getElementById("arPrevious").click();
-   }else if(phrase.includes("ar guide")){
-    showMode("ar");
-   }else if(phrase.includes("ai camera")){
-    showMode("ai");
-   }else if(phrase.includes("service checklist")){
-    showMode("manual");
-   }else if(phrase.includes("results")){
-    showMode("results");
-   }else if(phrase.includes("save finding")){
-    voiceStatus.textContent="For safety, review the assessment and tap Save Finding to confirm.";
-   }else{
-    voiceStatus.textContent="Command not recognised: "+phrase;
-   }
-  };
-  recognition.onerror=e=>{voiceStatus.textContent="Voice unavailable: "+e.error+". Check microphone permission or try the buttons.";};
-  recognition.onend=()=>{voiceRecognizer=null;voiceBtn.textContent="🎤 Voice Commands — Tap to Speak";};
-  try{recognition.start();}catch(e){voiceRecognizer=null;voiceBtn.textContent="🎤 Voice Commands — Tap to Speak";voiceStatus.textContent=e.message;}
+  if(handsFreeEnabled){stopHandsFree();return;}
+  handsFreeEnabled=true;
+  voiceRetryCount=0;
+  voiceUi("Starting microphone…");
+  startVoiceCycle();
  };
+ document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){
+   if(handsFreeEnabled){
+    clearTimeout(voiceRetryTimer);
+    voiceRetryTimer=null;
+    if(voiceRecognizer){try{voiceRecognizer.abort();}catch(_){}}
+    voiceStatus.textContent="Listening paused while browser is in the background.";
+   }
+  }else if(handsFreeEnabled){
+   voiceStatus.textContent="Resuming listening…";
+   scheduleVoiceRestart();
+  }
+ });
+ window.addEventListener("pagehide",()=>stopHandsFree());
 }
