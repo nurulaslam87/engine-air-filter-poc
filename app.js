@@ -1473,7 +1473,7 @@ if(!SpeechAPI){
    }
   };
   recognition.onerror=e=>{voiceStatus.textContent="Voice unavailable: "+e.error+". Check microphone permission or try the buttons.";};
-  recognition.onend=()=>{voiceRecognizer=null;voiceBtn.textContent="🎤 Speak a command";};
-  try{recognition.start();}catch(e){voiceRecognizer=null;voiceBtn.textContent="🎤 Speak a command";voiceStatus.textContent=e.message;}
+  recognition.onend=()=>{voiceRecognizer=null;voiceBtn.textContent="🎤 Voice Commands — Tap to Speak";};
+  try{recognition.start();}catch(e){voiceRecognizer=null;voiceBtn.textContent="🎤 Voice Commands — Tap to Speak";voiceStatus.textContent=e.message;}
  };
 }
