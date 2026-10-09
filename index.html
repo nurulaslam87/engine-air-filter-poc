@@ -333,7 +333,7 @@ header{height:auto;min-height:78px}
 
 
 <div id="panel">
-<div id="voiceAssistant"><button type="button" id="voiceCommandBtn">🎤 Start Hands-Free Listening</button><p id="voiceCommandStatus" role="status" aria-live="polite">Tap once to enable hands-free commands. Say “AI camera” or “AR guide” to open and start the camera. AR instructions are read aloud; say “next step”, “previous step”, or “repeat step”. Tap Stop Listening to disable.</p></div>
+<div id="voiceAssistant"><button type="button" id="voiceCommandBtn">🎤 Start Hands-Free Listening</button><button type="button" id="testSpeechBtn" style="margin-top:8px;width:100%;background:#334155;color:white;padding:12px;border-radius:8px">🔊 Test Speaker / Enable Audio</button><p id="voiceCommandStatus" role="status" aria-live="polite">Tap once to enable hands-free commands. Say “AI camera” or “AR guide” to open and start the camera. AR instructions are read aloud; say “next step”, “previous step”, or “repeat step”. Tap Stop Listening to disable.</p></div>
 
   <div id="status">
     Loading AutoVision AI…
@@ -528,7 +528,7 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=771"></script>
+<script src="./app.js?v=772"></script>
 
 <script>
 /* Independent navigation fallback: tabs remain usable if AI startup fails. */
