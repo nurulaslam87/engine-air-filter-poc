@@ -286,6 +286,17 @@ header{height:auto;min-height:78px}
 #aiGuidance{background:#101d26;border:1px solid #34536b;border-radius:12px;padding:13px;margin:12px 0}
 #aiGuidance strong{color:#a7f3d0}
 #aiGuidanceText{font-size:13px;line-height:1.5;color:#d8e4eb;margin:7px 0 0}
+#aiModePanel{display:flex;flex-direction:column;gap:8px}
+#aiModePanel[hidden]{display:none}
+#aiModePanel #viewer{order:2;margin:4px 0;height:min(53vh,460px)}
+#aiModePanel #status{order:3;margin:0}
+#aiModePanel #resultCard{order:5;margin:0}
+#aiModePanel #startBtn{order:4;margin:4px 0}
+#aiModePanel #captureBtn{order:6}
+#aiModePanel #inspectionPanel{order:7}
+#aiModePanel #supported{order:9}
+#aiDetectionSummary{order:1;background:#122b22;border:1px solid #276749;border-radius:10px;padding:10px 12px;font-size:13px;color:#b5f5d0}
+#aiGuidance{order:8;margin:4px 0}
 </style>
 </head>
 
@@ -390,7 +401,9 @@ header{height:auto;min-height:78px}
 </nav>
 <section id="aiModePanel" class="modePage" hidden>
  <div class="sectionHeading">AI-assisted inspection</div>
- <p class="manualHint">The AI camera highlights supported detected components. Review the guidance and confirm each suggestion before saving.</p><div id="aiGuidance" class="aiGuidance" role="status" aria-live="polite"><strong>Inspection guidance</strong><p id="aiGuidanceText">Start the AI camera and point it at a supported component. Guidance will appear after a stable detection.</p></div>
+ <p class="manualHint">AI highlights supported parts. Predictions require technician confirmation.</p>
+ <div id="aiDetectionSummary" class="aiDetectionSummary" role="status" aria-live="polite">No stable AI detection yet</div>
+ <div id="aiGuidance" class="aiGuidance" role="status" aria-live="polite"><strong>Inspection guidance · technician to verify</strong><p id="aiGuidanceText">Start the AI camera and point it at a supported component. Guidance appears after a stable detection.</p></div>
 </section>
 <section id="arGuidePanel" class="modePage" hidden>
  <div class="sectionHeading">AR-Guided Servicing</div>
@@ -508,7 +521,7 @@ header{height:auto;min-height:78px}
 
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-<script src="./app.js?v=73"></script>
+<script src="./app.js?v=74"></script>
 
 <script>
 /* Independent navigation fallback: tabs remain usable if AI startup fails. */
